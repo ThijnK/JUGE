@@ -6,3 +6,6 @@
 
 # Ignore benchmarks from previous competitions
 infrastructure/benchmarks_*
+
+# Ignore results of any tool
+tools/*/results_*
