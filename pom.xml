@@ -1,5 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>sbstcontest</groupId>
@@ -43,6 +44,7 @@
         <module>benchmarktool</module>
         <module>bbc_runtool</module>
         <module>randoop_runtool</module>
+        <module>maze_runtool</module>
         <module>manual_runtool</module>
         <module>jcrasher_runtool</module>
         <module>evosuite_runtool</module>
@@ -137,14 +139,16 @@
                         <configuration>
                             <filters>
                                 <filter>
-                                    <!-- Exclude files that sign a jar (one or multiple of the dependencies).
+                                    <!-- Exclude files that sign a jar (one or multiple of the
+                                    dependencies).
                                         One may not repack a signed jar without this, or you will get a SecurityException
                                         at program start. -->
                                     <artifact>*:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
-                                        <exclude>META-INF/*.INF</exclude> <!-- This one may not be required -->
+                                        <exclude>META-INF/*.INF</exclude> <!-- This one may not be
+                                        required -->
                                     </excludes>
                                 </filter>
                             </filters>

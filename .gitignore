@@ -27,3 +27,6 @@ Thumbs.db
 # Generated website
 _site/
 Gemfile.lock
+
+# Benchmark results
+results*/
