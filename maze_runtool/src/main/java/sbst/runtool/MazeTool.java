@@ -41,7 +41,6 @@ public class MazeTool implements ITestingTool {
             if (logbackFile.exists()) {
                 command.add("-Dlogback.configurationFile=" + logbackFile.getAbsolutePath());
             }
-            command.add("-Djava.library.path=/opt/z3/z3-4.13.3-x64-glibc-2.35/bin");
             command.add("-jar");
             command.add(mazeJar.getAbsolutePath());
             command.add("--classpath=" + classPath);
