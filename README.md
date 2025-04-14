@@ -1,31 +1,23 @@
 # JUnit Generation Benchmarking Infrastructure (JUGE)
 
-Here you will find the source code to the JUGE and instructions on how to test your tool with the infrastructure. 
+_This is a fork of the original [JUGE repository](https://github.com/JUnitContest/JUGE), customized to benchmark the [Maze tool](https://github.com/ThijnK/maze). For details on the modifications and usage, see [docs/MAZE.md](docs/MAZE.md)._
+
+Here you will find the source code to the JUGE and instructions on how to test your tool with the infrastructure.
 
 For information about the past editions of the JUnit Competition, see [https://junitcontest.github.io](https://junitcontest.github.io).
 
-[![Build Status](https://travis-ci.org/JUnitContest/junitcontest.svg?branch=master)](https://travis-ci.org/JUnitContest/junitcontest)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4904393.svg)](https://doi.org/10.5281/zenodo.4904393)
-
-# JUnit Competition - Important Dates
-
-Here are the planned periods:
-
-- 01 Dec’23: Tool submission.
-- 04 Jan’24: Notification of the results for structural metrics (code coverage and mutation score).
-- 18 Jan’24: Notification of the smell results.
-- 25 Jan’24: Camera-ready tool paper (4 pages, references included) deadline.
-- 14 Apr’24: Official competition results and tool presentation live at SBFT workshop.
 
 # Documentation
 
-See [docs/README.md](docs/USERGUIDE.md) for the user guide and [docs/DEVELOPERS.md](docs/CONTRIBUTORGUIDE.md) for the contributor guide. 
+See [docs/README.md](docs/USERGUIDE.md) for the user guide and [docs/DEVELOPERS.md](docs/CONTRIBUTORGUIDE.md) for the contributor guide.
 
-More information about the infrastructure and how it can be used to set up an empirical evaluation for unit test generators can be found in [Devroey, X., Gambi, A., Galeotti, J. P., Just, R., Kifetew, F., Panichella, A., Panichella, S. (2021). JUGE: An Infrastructure for Benchmarking Java Unit Test Generators. Softw. Test. Verification Reliab. 33(3) (2023)]([https://arxiv.org/abs/2106.07520](https://onlinelibrary.wiley.com/doi/full/10.1002/stvr.1838))
+More information about the infrastructure and how it can be used to set up an empirical evaluation for unit test generators can be found in [Devroey, X., Gambi, A., Galeotti, J. P., Just, R., Kifetew, F., Panichella, A., Panichella, S. (2021). JUGE: An Infrastructure for Benchmarking Java Unit Test Generators. Softw. Test. Verification Reliab. 33(3) (2023)](<[https://arxiv.org/abs/2106.07520](https://onlinelibrary.wiley.com/doi/full/10.1002/stvr.1838)>)
 
 ## Referencing JUGE
 
 If you use JUGE in your evaluation, please include the following reference to your paper:
+
 ```bibtex
 @article{Devroey2022,
   author = {Devroey, Xavier and Gambi, Alessio and Galeotti, Juan Pablo and Just, René and Kifetew, Fitsum and Panichella, Annibale and Panichella, Sebastiano},
@@ -53,5 +45,5 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>. 
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ```
