@@ -2,10 +2,13 @@
 
 .git
 .github
-*.md
+\*.md
 
 # Ignore benchmarks from previous competitions
-infrastructure/benchmarks_*
+
+infrastructure/benchmarks\_\*
+!infrastructure/benchmarks_maze
 
 # Ignore results of any tool
-tools/*/results_*
+
+tools/_/results\__
