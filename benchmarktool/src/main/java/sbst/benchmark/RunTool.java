@@ -106,8 +106,6 @@ public class RunTool {
                 for (String cname : task.getClassNames()) {
                     Util.cleanDirectory(testcases);
                     Main.info("\n\n### CLASS UNDER TEST ###: " + cname);
-                    channel.emit(cname);
-                    listener.startClass(cname);
                     if (this.timeBudget != -1) {
                         // enfore time budget
                         try {
@@ -118,6 +116,8 @@ public class RunTool {
                             Main.info(String.format(
                                     "\n\n Executing with internal budget of %s sec and external budget of %s sec ",
                                     timeBudget, (timeout_millis / 1000)));
+                            channel.emit(cname);
+                            listener.startClass(cname);
                             token(channel, "READY", timeout_millis);
                             Main.info("\n\n Execution finished with no timeout");
                         } catch (TimeoutException ex) {
@@ -126,6 +126,8 @@ public class RunTool {
                         }
                     } else {
                         // no time limit
+                        channel.emit(cname);
+                        listener.startClass(cname);
                         channel.token("READY");
                     }
                     listener.endClass(cname, testcases, extraCP);
@@ -178,11 +180,11 @@ public class RunTool {
 
         try {
             future.get(timeout_millis, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
+        } catch (InterruptedException | ExecutionException e) {
+            Main.debug("Error: \n" + e.getCause());
             for (StackTraceElement trace : e.getStackTrace()) {
                 Main.debug("" + trace);
             }
-            Main.debug("Error: \n" + e.getCause());
             e.printStackTrace();
         }
     }
