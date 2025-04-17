@@ -1,5 +1,3 @@
 #!/bin/bash
 
-TOOL=lib/maze_runtool-1.0.0.jar
-
-java -cp $TOOL sbst.runtool.Main
+java -cp lib/maze_runtool-1.0.0.jar sbst.runtool.Main

@@ -9,6 +9,14 @@ public class MazeTool implements ITestingTool {
     private String classPath;
     private File mazeJar = new File("lib", "maze.jar");
 
+    private String strategies; // comma-separated list of strategies
+    private String concreteDriven; // "true" or "false"
+
+    public MazeTool(String strategies, String concreteDriven) {
+        this.strategies = strategies;
+        this.concreteDriven = concreteDriven;
+    }
+
     public List<File> getExtraClassPath() {
         List<File> files = new ArrayList<>();
         if (!mazeJar.exists()) {
@@ -47,10 +55,10 @@ public class MazeTool implements ITestingTool {
             command.add("--classname=" + className);
             command.add("--output-path=./temp/testcases/");
             command.add("--log-level=INFO");
-            command.add("--strategy=DFS");
+            command.add("--strategy=" + strategies);
+            command.add("--concrete-driven=" + concreteDriven);
             command.add("--max-depth=100");
             command.add("--time-budget=" + timeBudget);
-            command.add("--concrete-driven=false");
             System.err.println("Running Maze with command: " + command);
             pbuilder.command(command);
 
@@ -67,7 +75,5 @@ public class MazeTool implements ITestingTool {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-
     }
-
 }
