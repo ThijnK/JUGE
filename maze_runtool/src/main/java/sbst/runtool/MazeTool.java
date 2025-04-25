@@ -59,6 +59,7 @@ public class MazeTool implements ITestingTool {
             command.add("--concrete-driven=" + concreteDriven);
             command.add("--max-depth=100");
             command.add("--time-budget=" + timeBudget);
+            command.add("--junit-version=JUnit4");
             System.err.println("Running Maze with command: " + command);
             pbuilder.command(command);
 

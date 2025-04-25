@@ -43,4 +43,3 @@ COPY infrastructure/benchmarks_maze/ /var/benchmarks/
 RUN for f in /var/benchmarks/projects/*.zip; do unzip $f -d /var/benchmarks/projects/; done;
 RUN rm -f /var/benchmarks/projects/*.zip
 RUN rm -f /var/benchmarks/projects/*_split.z*
-
