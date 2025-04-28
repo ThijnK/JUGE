@@ -83,6 +83,18 @@ MAZE-7=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
+MAZE-8=
+{
+  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
+  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
+  classes=(
+    nl.uu.maze.benchmarks.NestedLoops
+  )
+
+  classpath=(
+    /var/benchmarks/projects/maze_benchmarks/target/classes
+  )
+}
 MAZE-9=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
