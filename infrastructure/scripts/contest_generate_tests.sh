@@ -13,7 +13,9 @@ fi
 BENCH_HOME=/var/benchmarks
 CONF=$BENCH_HOME/conf/benchmarks.list
 
-BENCH_SUTS=$(cat $CONF | grep -E "(\w+-[0-9]+=)+" | awk -F'=' '{print $1}')
+# Get SUTS from the configuration file
+# Names must be capitalized, and optionally followed by a hyphen and number
+BENCH_SUTS=$(cat $CONF | grep -E "([A-Z]+(-[0-9]+)?=)+" | awk -F'=' '{print $1}')
 echo Benchmark SUTs: $BENCH_SUTS
 
 RESULTS_DIR=results_$1_$4

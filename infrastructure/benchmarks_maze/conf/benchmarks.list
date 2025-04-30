@@ -1,5 +1,5 @@
 {
-MAZE-1=
+ACK=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -11,7 +11,7 @@ MAZE-1=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MAZE-2=
+SEARCH=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -23,7 +23,7 @@ MAZE-2=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MAZE-3=
+PATHS=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -35,7 +35,7 @@ MAZE-3=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MAZE-4=
+EXPR=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -47,7 +47,7 @@ MAZE-4=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MAZE-5=
+FIB=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -59,7 +59,7 @@ MAZE-5=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MAZE-6=
+FLOAT=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -71,7 +71,7 @@ MAZE-6=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MAZE-7=
+MATRIX=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -83,7 +83,7 @@ MAZE-7=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MAZE-8=
+LOOPS=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -95,7 +95,7 @@ MAZE-8=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MAZE-9=
+SORT=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -107,7 +107,7 @@ MAZE-9=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MAZE-10=
+LIST=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -119,7 +119,7 @@ MAZE-10=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MAZE-11=
+TRIANGLE=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes

@@ -8,7 +8,8 @@
 
 infrastructure/benchmarks\_\*
 !infrastructure/benchmarks_maze
+!infrastructure/benchmarks_12th
 
 # Ignore results of any tool
 
-tools/_/results\__
+tools/\_/results\_\_
