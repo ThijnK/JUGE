@@ -39,7 +39,27 @@ The steps to run the benchmarks are much the same as in the [User Guide](USERGUI
     cd /home/maze
     contest_generate_tests.sh maze <number-of-runs> <first-run-number> <time-budget-seconds>
    ```
+
+## Computing metrics
+
 1. Compute metrics:
    ```sh
    contest_compute_metrics.sh results_maze_<time-budget-seconds> > state_log.txt 2> error_log.txt
    ```
+   Creates the `metrics` subfolder in the folders of each benchmark subject in the `results_maze_<time-budget-seconds>` folder.
+1. Archive interesting files:
+   ```sh
+   taresults.sh
+   ```
+   Creates a zip file containing all the `transcript.csv` files in the `results_maze_<time-budget-seconds>` folder as a "backup" of the results.
+1. Combine metrics:
+   ```sh
+   contest_transcript_single.sh results_maze_<time-budget-seconds>
+   ```
+   Creates a `results.tmp` file with all metrics in a single file.
+1. Compute the score:
+   ```sh
+   score.sh results.tmp <output-folder>
+   ```
+   Creates a `detailed_score.csv` and `score_per_subject.csv` file with the scores for each benchmark subject in the `results_maze_<time-budget-seconds>` folder.
+   Score calculations are described in the [README](/infrastructure/README) file in the `infrastructure` folder.

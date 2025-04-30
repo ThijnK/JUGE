@@ -4,7 +4,12 @@
 # Strategy can be comma-separated like "DFS,BFS"
 BENCHMARKS=(
   "DFS false"
-  "DFS,BFS false"
+  "BFS false"
+  "SGS false"
+  "RPS,COS false"
+  "FOS false"
+  "DFS true"
+  "FOS true"
 )
 
 # Check if the time budget is provided
