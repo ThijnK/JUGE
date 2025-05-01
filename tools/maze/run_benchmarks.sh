@@ -8,8 +8,6 @@ BENCHMARKS=(
   "SGS false"
   "RPS,COS false"
   "FOS false"
-  "DFS true"
-  "FOS true"
 )
 
 # Check if the time budget is provided
@@ -41,8 +39,15 @@ EOF
     chmod +x "./runtool"
     
     # Call the test generation script
-    name="maze-${strategy//,/-}-${concrete}"
-    contest_generate_tests.sh "$name" 1 1 $TIME_BUDGET
+    concrete_name="SD"
+    if [ "$concrete" == "true" ]; then
+        concrete_name="CD"
+    fi
+    name="maze-${strategy//,/-}-${concrete_name}"
+    contest_generate_tests.sh "$name" 10 1 $TIME_BUDGET
+
+    echo "Computing metrics for $name with time budget $TIME_BUDGET"
+    # Call the metrics computation script
     contest_compute_metrics.sh results_"$name"_"$TIME_BUDGET" > state_log.txt 2> error_log.txt
     
     echo "Finished benchmark: $strategy $concrete"

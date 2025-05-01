@@ -34,6 +34,10 @@ The steps to run the benchmarks are much the same as in the [User Guide](USERGUI
    ```sh
    docker run -v %cd%\tools\maze:/home/maze --name=JUGE -it junitcontest/infrastructure:latest
    ```
+   With a limit of 2 CPUs and 4GB of RAM:
+   ```sh
+   docker run -v %cd%\tools\maze:/home/maze --name=JUGE -it --cpus=2 --memory=4g junitcontest/infrastructure:latest
+   ```
 1. Inside the container, run the Maze tool:
    ```sh
     cd /home/maze

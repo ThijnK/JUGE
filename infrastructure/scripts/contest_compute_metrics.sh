@@ -23,7 +23,7 @@ BUDGET=${Array[2]}
 echo "BUDGET=$BUDGET"
 IFS=$oldIFS
 echo "Searching folders in directory $RESULTS_DIR"
-for f in `find $RESULTS_DIR -name '*-*_*'`; do
+for f in `find $RESULTS_DIR -mindepth 1 -maxdepth 1 -name '*_*'`; do
 	echo "========================================="
 	echo "Folder $f was found"
 	FOLDER_NAME=`basename $f`
