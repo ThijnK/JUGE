@@ -43,7 +43,7 @@ EOF
     if [ "$concrete" == "true" ]; then
         concrete_name="CD"
     fi
-    name="maze-${strategy//,/-}-${concrete_name}"
+    name="maze-${strategy//,/+}-${concrete_name}"
     contest_generate_tests.sh "$name" 10 1 $TIME_BUDGET
 
     echo "Computing metrics for $name with time budget $TIME_BUDGET"
