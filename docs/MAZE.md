@@ -61,9 +61,19 @@ The steps to run the benchmarks are much the same as in the [User Guide](USERGUI
    contest_transcript_single.sh results_maze_<time-budget-seconds>
    ```
    Creates a `results.tmp` file with all metrics in a single file.
+   You can change "results*maze*<time-budget-seconds>" to "./" to combine all metrics from different results folders.
 1. Compute the score:
    ```sh
    score.sh results.tmp <output-folder>
    ```
    Creates a `detailed_score.csv` and `score_per_subject.csv` file with the scores for each benchmark subject in the `results_maze_<time-budget-seconds>` folder.
    Score calculations are described in the [README](/infrastructure/README) file in the `infrastructure` folder.
+   It also performs a statistical analysis of the scores if multiple tools (or multiple runs of the same tool with different names) are present in the `results.tmp` file.
+
+## Script
+
+A script, `run_benchmarks.sh`, is provided in the [`tools/maze`](/tools/maze/run_benchmarks.sh) directory to automate the process of running the benchmarks on MAZE using different search strategies.
+The script takes care of generating tests and computing the metrics.
+After that, you still have to manually follow the steps under "Computing metrics", starting from step 2, to combine and analyze results.
+Note that the script will create multiple results folders, so in step 3, you would use the command `contest_transcript_single.sh ./` to combine all metrics from different results folders.
+Running the `score.sh` scripts thereafter will perform a friedman test and provide rankings for the different strategies.
