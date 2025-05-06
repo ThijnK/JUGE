@@ -215,7 +215,7 @@ public class TestSuite {
         for (String f : srcFiles) {
             String commandLine = null;
             if (scaffoldingFiles.size() == 0 || f.contains(DUMMY_JUNIT_CLASS)) {
-                commandLine = String.format("%s -sourcepath %s -cp %s -d %s %s", Main.JAVAC,
+                commandLine = String.format("%s -encoding UTF-8 -sourcepath %s -cp %s -d %s %s", Main.JAVAC,
                         testCaseDir.getAbsolutePath(), cp, testCaseBinDir,
                         testCaseDir.getAbsolutePath() + File.separator + f);
                 Main.debug("\n===\njavac command line:\n" + commandLine + "\n");
@@ -236,7 +236,7 @@ public class TestSuite {
 
                 Main.info(">> " + files);
 
-                commandLine = String.format("%s -sourcepath %s -cp %s -d %s %s", Main.JAVAC,
+                commandLine = String.format("%s -encoding UTF-8 -sourcepath %s -cp %s -d %s %s", Main.JAVAC,
                         testCaseDir.getAbsolutePath(), cp, testCaseBinDir,
                         files);
                 Main.debug("\n===\njavac command line:\n" + commandLine + "\n");
