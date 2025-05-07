@@ -12,7 +12,6 @@ The following are the (synthetic) subjects in this directory:
 - `BinarySearch`: Implementation of a binary search algorithm on an int array.
 - `ConvergingPaths`: Class where control flow paths repeatedly diverge and converge.
 - `ExprEvaluator`: Evaluates simple arithemetic expressions in a char array, using recursive descent parsing.
-- `Fibonacci`: Implementation of the Fibonacci function, both iterative and recursive.
 - `FloatStatistics`: Provides methods for statistics and functions of floating-point numbers (e.g., mean, sqrt, etc.).
 - `MatrixAnalyzer`: Performs operations on a 2D int array.
 - `NestedLoops`: Sorts an array with bubble sort while calculating a specific value.

@@ -8,6 +8,7 @@ BENCHMARKS=(
   "SGS false"
   "RPS,COS false"
   "FOS false"
+  "FOS,COS false"
 )
 
 # Check if the time budget is provided

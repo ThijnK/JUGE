@@ -47,18 +47,6 @@ EXPR=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-FIB=
-{
-  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
-  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
-  classes=(
-    nl.uu.maze.benchmarks.Fibonacci
-  )
-
-  classpath=(
-    /var/benchmarks/projects/maze_benchmarks/target/classes
-  )
-}
 FLOAT=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
