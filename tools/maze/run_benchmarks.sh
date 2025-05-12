@@ -1,14 +1,17 @@
 #!/bin/bash
 
 # Define benchmark pairs (strategies and concrete-driven)
-# Strategy can be comma-separated like "DFS,BFS"
+# Strategy can be comma-separated like "DFS,BFS" to interleave them
 BENCHMARKS=(
-  "DFS false"
-  "BFS false"
-  "SGS false"
-  "RPS,COS false"
-  "FOS false"
-  "FOS,COS false"
+    "DFS false"
+    "BFS false"
+    "SGS false"
+    "RPS,COS false"
+    "FOS false"
+    "FOS,COS false"
+    "DFS true"
+    "BFS true"
+    "FOS,COS true"
 )
 
 # Check if the time budget is provided
@@ -47,7 +50,7 @@ EOF
     name="maze-${strategy//,/+}-${concrete_name}"
     contest_generate_tests.sh "$name" 10 1 $TIME_BUDGET
 
-    echo "Computing metrics for $name with time budget $TIME_BUDGET"
+    echo "Computing metrics for $name with time budget $TIME_BUDGET" > state_log.txt 2> error_log.txt
     # Call the metrics computation script
     contest_compute_metrics.sh results_"$name"_"$TIME_BUDGET" > state_log.txt 2> error_log.txt
     
@@ -63,3 +66,4 @@ java -cp lib/maze_runtool-1.0.0.jar sbst.runtool.Main
 EOF
 
 echo "All benchmarks completed!"
+echo "Computing scores..."

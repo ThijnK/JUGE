@@ -1,6 +1,6 @@
 # JUnit Generation Benchmarking Infrastructure (JUGE)
 
-_This is a fork of the original [JUGE repository](https://github.com/JUnitContest/JUGE), customized to benchmark the [Maze tool](https://github.com/ThijnK/maze). For details on the modifications and usage, see [docs/MAZE.md](docs/MAZE.md)._
+**_This is a fork of the original [JUGE repository](https://github.com/JUnitContest/JUGE), customized to benchmark the [Maze tool](https://github.com/ThijnK/maze). For details on the modifications and usage, see [docs/MAZE.md](docs/MAZE.md)._**
 
 Here you will find the source code to the JUGE and instructions on how to test your tool with the infrastructure.
 

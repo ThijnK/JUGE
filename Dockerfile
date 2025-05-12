@@ -38,8 +38,8 @@ COPY infrastructure/lib/pitest-1.1.11.jar /usr/local/bin/lib/pitest.jar
 COPY infrastructure/lib/pitest-command-line-1.1.11.jar /usr/local/bin/lib/pitest-command-line.jar
 COPY infrastructure/lib/jacocoagent.jar /usr/local/bin/lib/jacocoagent.jar
 
-# Copy the last version of the benchmarktool utilities
-COPY benchmarktool/target/benchmarktool-1.0.0-shaded.jar /usr/local/bin/lib/benchmarktool-shaded.jar
+# Copy the benchmarktool utilities
+COPY benchmarktool/lib/benchmarktool-1.0.0-shaded.jar /usr/local/bin/lib/benchmarktool-shaded.jar
 
 # Copy the projects and configuration file to run the tools on a set of CUTs
 RUN mkdir /var/benchmarks
