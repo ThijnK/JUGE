@@ -129,6 +129,13 @@ To compute the metrics (coverage, mutation analysis, etc.) and the scores, follo
    Score calculations are described in the [README](/infrastructure/README) file in the `infrastructure` folder.
    It also performs a statistical analysis of the scores if multiple tools (or multiple runs of the same tool with different names) are present in the `results.tmp` file.
 
+## Benchmarking other tools
+
+This repository is designed to benchmark any Java unit test generation tool, not just MAZE.
+Some other tools are already included in the `tools` folder, including EvoSuite and Randoop, which were both used to compare against MAZE.
+To run benchmarks for other tools, you can follow the same steps as above, but specifying the right tool folder when you run the docker container.
+For convenience, a `run_benchmarks.sh` script is provided in the `tools` folder for both EvoSuite and Randoop, which runs the tool for all four time budgets used in the MAZE evaluation (5s, 10s, 30s, 60s).
+
 ## Changes to JUGE framework
 
 The following changes were made to the JUGE framework to support the Maze tool:
