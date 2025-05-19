@@ -1,8 +1,6 @@
 # Maze Benchmark Setup
 
-This directory contains the benchmark subjects used to benchmark the MAZE tool.
-This set is synthetic set, but MAZE was also run on the benchmark set used in the Java Test Case Generation Track of the SBFT Tool Competition 2024, which are located in the benchmarks_12th folder.
-For more information about the subjects in benchmarks_12th, see the [README](https://github.com/JUnitContest/JUGE/blob/44a295e682949aabb33bf6ef8ee4b458cfc3847d/infrastructure/benchmarks_12th/README.md) in the original JUGE repository.
+This directory contains the synthetic benchmark subjects used to benchmark the MAZE tool and its search strategies.
 
 ## Subjects
 

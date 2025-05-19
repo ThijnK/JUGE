@@ -2,7 +2,16 @@
 
 This document describes the benchmarking setup for the [MAZE tool](https://github.com/ThijnK/maze) using the JUGE framework and how to run the benchmarks.
 
-The benchmarking used to evaluate MAZE is completely replicable using the Docker setup in this repository.
+MAZE was benchmarked on two sets of benchmarks: a synthetic benchmark set and an open source benchmark set.
+The synthetic benchmark set is located in the [`benchmarks_maze`](/infrastructure/benchmarks_maze/README.md) directory, and contains 10 benchmark subjects.
+The open source benchmark set is the same as the one used in the Java Test Case Generation Track of the SBFT Tool Competition 2024, which is located in the [`benchmarks_12th`](/infrastructure/benchmarks_12th/README.md) directory.
+
+All data used in the evaluation is available in two zip files:
+
+- [maze_benchmarks_synth.zip](/maze_benchmarks_synth.zip) contains the results of the benchmarks for the synthetic benchmark set, for MAZE with different search strategies, as well as EvoSuite and Randoop.
+- [maze_benchmarks_open.zip](/maze_benchmarks_open.zip) contains the results of running MAZE using FOS+COS on the open source benchmark set.
+
+The benchmarking to obtain that data is completely replicable using the Docker setup in this repository.
 Instructions on how to replicate the benchmarks are provided below.
 Instructions to run a single benchmark are also provided, in case you want to test the tool with a different configuration or on a different set of benchmarks.
 
