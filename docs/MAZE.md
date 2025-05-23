@@ -68,6 +68,7 @@ To replicate the benchmarks, follow these steps:
    ```
    This will create a score folder with the results of the benchmarks, including the Friedman test results, p-values, scores, and rankings.
    If in the previous step you ran the benchmarks with all four time bdugets (5s, 10s, 30s, 60s), the resulting scores will match the ones used in the evaluation of MAZE.
+   Additional metrics and plots used in the evaluation are all derived from the raw data in the `results.tmp` file, or from results from a subset of strategies.
 
 For further instructions on how to run benchmarks using different MAZE configurations, or different benchmark sets, see the next section.
 
