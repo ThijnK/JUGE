@@ -106,11 +106,11 @@ print(res)
 res = as.data.frame(do.call(rbind, res))
 write.table(res, file = paste(output_dir,"/friedman_test.txt", sep=""))
 
-# apply the post-hoc Kruskal's predecure 
-res <- kwAllPairsConoverTest(x = average.scores$score, g=as.factor(average.scores$tool))
+# apply the post-hoc Conover test
+res <- frdAllPairsConoverTest(y = average.scores$score, groups = factor(average.scores$tool), blocks = factor(average.scores$config))
 print(res)
 res = as.data.frame(res$p.value)
-write.table(res, file = paste(output_dir,"/kruskal.txt", sep=""))
+write.table(res, file = paste(output_dir,"/conover_test.txt", sep=""))
 
 # compute final ranking
 ranks <- data.frame(matrix(ncol=3,nrow=0, dimnames=list(NULL, c("config", "tool", "rank"))))
