@@ -26,9 +26,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get install -y tzdata
 
 # [R](https://www.r-project.org)
-RUN apt-get install -y libgmp-dev libmpfr-dev
-RUN apt-get install -y r-base
-RUN Rscript /usr/local/bin/get-libraries.R
+RUN apt-get update && \
+    apt-get install -y libgmp-dev libmpfr-dev r-base && \
+    Rscript /usr/local/bin/get-libraries.R
 
 # Copy dependencies
 RUN mkdir -p /usr/local/bin/lib/

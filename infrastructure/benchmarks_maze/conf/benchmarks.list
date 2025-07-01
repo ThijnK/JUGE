@@ -119,4 +119,124 @@ TRIANGLE=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
+BINTREE=
+{
+  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
+  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
+  classes=(
+    nl.uu.maze.benchmarks.BinaryTree
+  )
+
+  classpath=(
+    /var/benchmarks/projects/maze_benchmarks/target/classes
+  )
+}
+BITWISE=
+{
+  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
+  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
+  classes=(
+    nl.uu.maze.benchmarks.BitwiseManipulator
+  )
+
+  classpath=(
+    /var/benchmarks/projects/maze_benchmarks/target/classes
+  )
+}
+BRACKETS=
+{
+  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
+  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
+  classes=(
+    nl.uu.maze.benchmarks.BracketBalancer
+  )
+
+  classpath=(
+    /var/benchmarks/projects/maze_benchmarks/target/classes
+  )
+}
+COMPONENTS=
+{
+  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
+  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
+  classes=(
+    nl.uu.maze.benchmarks.ConnectedComponents
+  )
+
+  classpath=(
+    /var/benchmarks/projects/maze_benchmarks/target/classes
+  )
+}
+DIJKSTRA=
+{
+  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
+  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
+  classes=(
+    nl.uu.maze.benchmarks.Dijkstra
+  )
+
+  classpath=(
+    /var/benchmarks/projects/maze_benchmarks/target/classes
+  )
+}
+GRAPH=
+{
+  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
+  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
+  classes=(
+    nl.uu.maze.benchmarks.GraphTraversal
+  )
+
+  classpath=(
+    /var/benchmarks/projects/maze_benchmarks/target/classes
+  )
+}
+HEAPSORT=
+{
+  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
+  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
+  classes=(
+    nl.uu.maze.benchmarks.HeapSort
+  )
+
+  classpath=(
+    /var/benchmarks/projects/maze_benchmarks/target/classes
+  )
+}
+INTUTILS=
+{
+  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
+  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
+  classes=(
+    nl.uu.maze.benchmarks.IntUtils
+  )
+
+  classpath=(
+    /var/benchmarks/projects/maze_benchmarks/target/classes
+  )
+}
+PATTERNMATCH=
+{
+  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
+  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
+  classes=(
+    nl.uu.maze.benchmarks.StringPatternMatcher
+  )
+
+  classpath=(
+    /var/benchmarks/projects/maze_benchmarks/target/classes
+  )
+}
+STRUTILS=
+{
+  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
+  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
+  classes=(
+    nl.uu.maze.benchmarks.StringUtils
+  )
+
+  classpath=(
+    /var/benchmarks/projects/maze_benchmarks/target/classes
+  )
+}
 }
