@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--suppress ALL -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.vorpal.research</groupId>
+    <artifactId>kex</artifactId>
+    <packaging>pom</packaging>
+    <version>0.0.11</version>
+    <modules>
+        <module>kex-test</module>
+        <module>kex-core</module>
+        <module>kex-annotation-processor</module>
+        <module>kex-runner</module>
+        <module>kex-executor</module>
+    </modules>
+
+    <properties>
+        <jvm.version>1.8</jvm.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- necessary for intellij to function -->
+        <maven.compiler.source>${jvm.version}</maven.compiler.source>
+        <maven.compiler.target>${jvm.version}</maven.compiler.target>
+
+        <kotlin.version>2.0.0</kotlin.version>
+        <kotlin.code.style>official</kotlin.code.style>
+        <serialization.version>1.7.0-RC</serialization.version>
+        <coroutines.version>1.8.1</coroutines.version>
+        <collections.version>0.3.5</collections.version>
+        <compiler-plugin.version>3.5.1</compiler-plugin.version>
+
+        <kt-helper.version>0.1.19</kt-helper.version>
+        <kfg.version>0.4.15</kfg.version>
+
+        <logback.version>1.2.11</logback.version>
+        <slf4j.version>1.7.36</slf4j.version>
+        <commons-cli.version>1.5.0</commons-cli.version>
+
+        <mockito.version>4.11.0</mockito.version>
+        <mockito.id>core</mockito.id>
+
+        <test.jvm.params>
+            -XX:+IgnoreUnrecognizedVMOptions
+            --add-opens=java.base/java.lang=ALL-UNNAMED
+            --add-opens=java.base/java.util=ALL-UNNAMED
+            --add-opens=java.base/java.math=ALL-UNNAMED
+            --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+            --illegal-access=warn
+        </test.jvm.params>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>github-apal-research-kotlin-maven</id>
+            <url>https://maven.apal-research.com</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib-common</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib-jdk8</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-test-junit</artifactId>
+            <version>${kotlin.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-reflect</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-collections-immutable-jvm</artifactId>
+            <version>${collections.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <version>${kotlin.version}</version>
+            </plugin>
+<!--
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.2</version>
+                <configuration>
+                    <parallel>all</parallel>
+                    <threadCount>8</threadCount>
+                </configuration>
+            </plugin>
+-->
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>full-smt</id>
+
+            <properties>
+                <full-smt>true</full-smt>
+            </properties>
+
+            <modules>
+                <module>kex-boolector</module>
+                <module>kex-z3</module>
+                <module>kex-ksmt</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>boolector</id>
+
+            <properties>
+                <boolector-only>true</boolector-only>
+            </properties>
+
+            <modules>
+                <module>kex-boolector</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>z3</id>
+
+            <properties>
+                <z3-only>true</z3-only>
+            </properties>
+
+            <modules>
+                <module>kex-z3</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>ksmt</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+
+            <modules>
+                <module>kex-ksmt</module>
+            </modules>
+        </profile>
+    </profiles>
+
+</project>

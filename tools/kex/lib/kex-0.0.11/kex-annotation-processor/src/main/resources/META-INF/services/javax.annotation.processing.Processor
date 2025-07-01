@@ -1,0 +1,4 @@
+org.vorpal.research.kex.smt.SMTProcessor
+org.vorpal.research.kex.smt.SolverInfoProcessor
+org.vorpal.research.kex.InheritanceInfoProcessor
+org.vorpal.research.kex.TransformerGenerator

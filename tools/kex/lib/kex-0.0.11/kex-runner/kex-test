@@ -1,0 +1,27 @@
+2024-08-27 09:21:06.151 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster] - Master is destroying all the workers
+2024-08-27 09:21:06.151 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster] - Destroying worker 0
+2024-08-27 09:21:06.152 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster$WorkerWrapper] - Terminating worker process 0
+2024-08-27 09:21:06.653 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster$WorkerWrapper] - Worker process 0 terminated: false
+2024-08-27 09:21:11.623 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster] - Master is destroying all the workers
+2024-08-27 09:21:11.623 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster] - Destroying worker 0
+2024-08-27 09:21:11.624 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster$WorkerWrapper] - Terminating worker process 0
+2024-08-27 09:21:16.760 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster] - Master is destroying all the workers
+2024-08-27 09:21:16.760 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster] - Destroying worker 0
+2024-08-27 09:21:16.760 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster$WorkerWrapper] - Terminating worker process 0
+2024-08-27 09:21:25.759 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster] - Master is destroying all the workers
+2024-08-27 09:21:25.759 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster] - Destroying worker 0
+2024-08-27 09:21:25.760 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster$WorkerWrapper] - Terminating worker process 0
+2024-08-27 09:21:26.261 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster$WorkerWrapper] - Worker process 0 terminated: false
+2024-08-27 09:21:30.857 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster] - Master is destroying all the workers
+2024-08-27 09:21:30.857 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster] - Destroying worker 0
+2024-08-27 09:21:30.858 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster$WorkerWrapper] - Terminating worker process 0
+2024-08-27 09:21:36.002 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster] - Master is destroying all the workers
+2024-08-27 09:21:36.002 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster] - Destroying worker 0
+2024-08-27 09:21:36.002 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster$WorkerWrapper] - Terminating worker process 0
+2024-08-27 09:21:41.638 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster] - Master is destroying all the workers
+2024-08-27 09:21:41.638 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster] - Destroying worker 0
+2024-08-27 09:21:41.640 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster$WorkerWrapper] - Terminating worker process 0
+2024-08-27 09:21:46.824 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster] - Master is destroying all the workers
+2024-08-27 09:21:46.824 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster] - Destroying worker 0
+2024-08-27 09:21:46.826 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster$WorkerWrapper] - Terminating worker process 0
+2024-08-27 09:21:47.327 [DEBUG][org.vorpal.research.kex.worker.ExecutorMaster$WorkerWrapper] - Worker process 0 terminated: false

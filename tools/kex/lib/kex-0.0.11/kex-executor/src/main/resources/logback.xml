@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<configuration>
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%-5p] - %m%n</pattern>
+        </encoder>
+    </appender>
+    <appender name="kexSiftingFileLogger" class="ch.qos.logback.classic.sift.SiftingAppender">
+        <discriminator>
+            <key>kex-run-id</key>
+            <defaultValue>kex-test</defaultValue>
+        </discriminator>
+        <sift>
+            <appender name="kexTestFileLogger-${kex-run-id}" class="ch.qos.logback.core.FileAppender">
+                <file>${kex-run-id}</file>
+                <append>true</append>
+                <encoder>
+                    <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5p][%c] - %m%n</pattern>
+                </encoder>
+            </appender>
+        </sift>
+    </appender>
+
+    <appender name="asyncFileLogger" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="kexSiftingFileLogger"/>
+    </appender>
+
+    <logger name="org.vorpal.research" level="ALL" additivity="false">
+        <appender-ref ref="asyncFileLogger"/>
+    </logger>
+
+    <logger name="ch.qos.logback" level="OFF"/>
+</configuration>
