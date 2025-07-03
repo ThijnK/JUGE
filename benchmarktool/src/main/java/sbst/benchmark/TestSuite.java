@@ -45,7 +45,7 @@ public class TestSuite {
     private int d4jMutantsIgnored;
 
     public TestSuite(IBenchmarkTask task, String toolName, String benchmark, File testCaseDir, List<File> extraCP,
-                     String cut) {
+            String cut) {
         this.task = task;
         this.toolName = toolName;
         this.benchmark = benchmark;
@@ -93,7 +93,7 @@ public class TestSuite {
     public List<String> getTestSrcFiles(final File testCaseDir) {
         DirectoryScanner scanner = new DirectoryScanner();
         scanner.setFollowSymlinks(false);
-        scanner.setIncludes(new String[]{"**/*.java"});
+        scanner.setIncludes(new String[] { "**/*.java" });
         scanner.setBasedir(testCaseDir);
         scanner.setCaseSensitive(false);
         scanner.scan();
@@ -206,7 +206,8 @@ public class TestSuite {
         // if contain scaffolding, the compilation has to include that file
         List<String> scaffoldingFiles = new ArrayList<String>();
         for (String file : srcFiles) {
-            if (file.contains("scaffolding")) {
+            // For Kex, ReflectionUtils.java is used for scaffolding
+            if (file.contains("scaffolding") || file.contains("ReflectionUtils")) {
                 scaffoldingFiles.add(file);
                 numberOfUncompilableTestClasses--;
             }
@@ -223,7 +224,7 @@ public class TestSuite {
             } else {
                 Main.info("Compiling with scaffolding tests");
 
-                if (scaffoldingFiles.contains(f)){ //scaffolding test are already compiled with other tests
+                if (scaffoldingFiles.contains(f)) { // scaffolding test are already compiled with other tests
                     continue;
                 }
 
@@ -408,12 +409,12 @@ public class TestSuite {
 
         Main.info("\n=== Run Jacoco for Coverage ===");
         try {
-            //System.out.println("HERE >>>> "+ testCaseDir);
-            //System.out.println("HERE >>>> "+ testCaseDir.getParent());
-            //System.out.println("HERE >>>> "+ getTestCaseBinDir(testCaseDir));
-            //System.out.println("HERE >>>> "+ getTask().getClassPath());
-            //System.out.println("HERE >>>> "+ getExtraCP());
-            //System.out.println("HERE >>>> "+Main.JUNIT_DEP_JAR+" : "+Main.JUNIT_JAR);
+            // System.out.println("HERE >>>> "+ testCaseDir);
+            // System.out.println("HERE >>>> "+ testCaseDir.getParent());
+            // System.out.println("HERE >>>> "+ getTestCaseBinDir(testCaseDir));
+            // System.out.println("HERE >>>> "+ getTask().getClassPath());
+            // System.out.println("HERE >>>> "+ getExtraCP());
+            // System.out.println("HERE >>>> "+Main.JUNIT_DEP_JAR+" : "+Main.JUNIT_JAR);
 
             JaCoCoLauncher launcher = new JaCoCoLauncher(this.getTestCaseBinDir(testCaseDir).getParent());
 
@@ -462,7 +463,7 @@ public class TestSuite {
         Main.info("\n=== Run PIT ===");
         try {
             // TODO Is this misleading? I suspect mutants are already there....
-//			Main.debug("Generate mutations via PIT");
+            // Main.debug("Generate mutations via PIT");
             String cp = new Util.CPBuilder()
                     .and(Main.JUNIT_JAR)
                     .and(Main.JUNIT_DEP_JAR)
@@ -481,16 +482,16 @@ public class TestSuite {
                     if (element.startsWith("testcases.")) {
                         element = element.replace("testcases.", "");
                     }
-                    element = element.substring(0, element.length() - 5);//replace(".java","");
+                    element = element.substring(0, element.length() - 5);// replace(".java","");
                     fixedTestClasses.add(element);
                 }
             }
 
-//			Main.debug("Running tests against generated Mutants");
-//			Main.debug("Running PITWrapper with the following data:");
-//			Main.debug("> CP = "+cp);
-//			Main.debug("> CUT = "+cut);
-//			Main.debug("> Test cases = "+fixedTestClasses);
+            // Main.debug("Running tests against generated Mutants");
+            // Main.debug("Running PITWrapper with the following data:");
+            // Main.debug("> CP = "+cp);
+            // Main.debug("> CUT = "+cut);
+            // Main.debug("> Test cases = "+fixedTestClasses);
             PITWrapper wrapper = new PITWrapper(cp, cut, fixedTestClasses);
 
             // prepare the mutant evaluator
@@ -499,9 +500,13 @@ public class TestSuite {
             // compute mutation coverage
             evaluator.computeCoveredMutants(wrapper.getGeneratedMutants(), jacoco_result);
 
-//			Main.debug("Run tests against the covered mutations (i.e., mutants infecting on covered lines according to Jacoco)");
-            Main.info("Executing Mutation Analysis using " + wrapper.getGeneratedMutants().getNumberOfMutations() + " mutants ");
-            String mutated = this.getTestCaseBinDir(testCaseDir).getParent() + "/mutated_code"; // temporary folder where to save the mutated SUT
+            // Main.debug("Run tests against the covered mutations (i.e., mutants infecting
+            // on covered lines according to Jacoco)");
+            Main.info("Executing Mutation Analysis using " + wrapper.getGeneratedMutants().getNumberOfMutations()
+                    + " mutants ");
+            String mutated = this.getTestCaseBinDir(testCaseDir).getParent() + "/mutated_code"; // temporary folder
+                                                                                                // where to save the
+                                                                                                // mutated SUT
 
             try {
                 // compute killed mutations
@@ -523,7 +528,8 @@ public class TestSuite {
             // mutation analysis results
             MutationAnalysis cov = evaluator.getMutationCoverage();
 
-            // remove from the count flaky tests, i.e., those tests that already fail in the original SUT)
+            // remove from the count flaky tests, i.e., those tests that already fail in the
+            // original SUT)
             cov.deleteFlakyTest(this.flakyTests);
 
             if (cov != null) {
@@ -537,8 +543,9 @@ public class TestSuite {
                 this.d4jMutantsKilled = cov.numberOfKilledMutation();
             }
 
-            //save data to file mutation_results.txt
-            PrintWriter out = new PrintWriter(this.getTestCaseBinDir(testCaseDir).getParent() + "/mutation_results.txt");
+            // save data to file mutation_results.txt
+            PrintWriter out = new PrintWriter(
+                    this.getTestCaseBinDir(testCaseDir).getParent() + "/mutation_results.txt");
             out.println(cov.toString());
             out.close();
 
