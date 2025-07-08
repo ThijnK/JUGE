@@ -3,7 +3,7 @@
 # Define time budget
 # MAKE SURE TO UPDATE kex.ini TO SET THE TIME LIMIT AS WELL
 TIME_BUDGET=60
-BENCHMARK_JOB_NAME="randoop"
+BENCHMARK_JOB_NAME="kex"
 
 echo "Starting benchmark runs for various time budgets."
 echo "Tool Name: $BENCHMARK_JOB_NAME"
