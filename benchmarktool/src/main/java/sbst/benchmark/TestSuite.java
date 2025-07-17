@@ -207,7 +207,7 @@ public class TestSuite {
         List<String> scaffoldingFiles = new ArrayList<String>();
         for (String file : srcFiles) {
             // For Kex, ReflectionUtils.java is used for scaffolding
-            if (file.contains("scaffolding") || file.contains("ReflectionUtils")) {
+            if (file.contains("_scaffolding") || file.contains("ReflectionUtils") || file.contains("EqualityUtils")) {
                 scaffoldingFiles.add(file);
                 numberOfUncompilableTestClasses--;
             }

@@ -26,7 +26,7 @@ public class TestExec4MutationTask implements Callable<MutationResults> {
     Set<TestInfo> flakyTests;
 
     public TestExec4MutationTask(String cp, List<String> pTestClasses, Set<TestInfo> pFlakyTests,
-                                 MutationIdentifier id) {
+            MutationIdentifier id) {
         try {
             // Load the jar
             this.cp = cp;
@@ -97,7 +97,8 @@ public class TestExec4MutationTask implements Callable<MutationResults> {
             List<Class> actualTestClasses = new ArrayList<>();
             for (String test : testClasses) {
 
-                if (test.contains("_scaffolding")) {
+                if (test.contains("_scaffolding") || test.contains("ReflectionUtils")
+                        || test.contains("EqualityUtils")) {
                     Main.debug("Skipped scaffolding test " + test);
                     continue;
                 }

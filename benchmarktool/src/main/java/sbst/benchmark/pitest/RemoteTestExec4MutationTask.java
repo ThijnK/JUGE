@@ -18,7 +18,7 @@ import java.util.Set;
 public class RemoteTestExec4MutationTask extends TestExec4MutationTask {
 
     public RemoteTestExec4MutationTask(String cp, List<String> pTestClasses, Set<TestInfo> pFlakyTests,
-                                       MutationIdentifier id) {
+            MutationIdentifier id) {
         super(cp, pTestClasses, pFlakyTests, id);
     }
 
@@ -35,7 +35,7 @@ public class RemoteTestExec4MutationTask extends TestExec4MutationTask {
 
         List<String> actualTestClasses = new ArrayList<>();
         for (String test : testClasses) {
-            if (test.contains("_scaffolding")) {
+            if (test.contains("_scaffolding") || test.contains("ReflectionUtils") || test.contains("EqualityUtils")) {
                 Main.debug("Skipped scaffolding test " + test);
                 continue;
             }

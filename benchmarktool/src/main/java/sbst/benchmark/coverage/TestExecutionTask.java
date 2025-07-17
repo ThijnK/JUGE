@@ -36,7 +36,7 @@ public class TestExecutionTask implements Callable<List<Result>> {
         Main.debug("Running the tests: " + testClasses);
         for (String test : testClasses) {
 
-            if (test.contains("_scaffolding")) {
+            if (test.contains("_scaffolding") || test.contains("ReflectionUtils") || test.contains("EqualityUtils")) {
                 Main.debug("Skipped scaffolding test " + test);
                 continue;
             }
@@ -55,21 +55,24 @@ public class TestExecutionTask implements Callable<List<Result>> {
 
             results.add(result);
 
-            //Main.debug("Failure: "+result.getFailures());
-            //for (Failure fail : result.getFailures()){
-            //	Main.debug("Failing Tests: "+fail.getTestHeader()+"\n"+fail.getException()+"\n"+fail.getDescription()+"\n"+fail.getMessage());
-            //}
+            // Main.debug("Failure: "+result.getFailures());
+            // for (Failure fail : result.getFailures()){
+            // Main.debug("Failing Tests:
+            // "+fail.getTestHeader()+"\n"+fail.getException()+"\n"+fail.getDescription()+"\n"+fail.getMessage());
+            // }
         }
         Main.debug("Executions terminated");
         try {
             cl.close();
         } catch (SecurityException ex) {
-            // Print an error message and continue. Exception occurred due to wrong configuration of the JVM security policy.
+            // Print an error message and continue. Exception occurred due to wrong
+            // configuration of the JVM security policy.
             Main.info("Was unable to close the URLClassLoader after execution of the tests due to security policy!");
             ex.printStackTrace();
             Main.info("Will continue execution");
         } catch (IOException ex) {
-            // Print an error message and continue. Remaining opened files will be closed at the exit of the application.
+            // Print an error message and continue. Remaining opened files will be closed at
+            // the exit of the application.
             Main.info("An exception occurred during closing of the URLClassLoader!");
             ex.printStackTrace();
             Main.info("Will continue execution");
