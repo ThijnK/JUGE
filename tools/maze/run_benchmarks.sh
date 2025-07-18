@@ -25,36 +25,33 @@ TIME_BUDGET="$1"
 
 # Loop through each benchmark pair
 for benchmark in "${BENCHMARKS[@]}"; do
-    # Extract strategy and concrete values
-    # This preserves commas in the strategy part
     strategy=$(echo "$benchmark" | awk '{print $1}')
     concrete=$(echo "$benchmark" | awk '{print $2}')
     
+    echo "-----------------------------------"
     echo "Running benchmark with strategy: $strategy, concrete: $concrete"
+    echo "-----------------------------------"
     
-    # Update the runtool file
+    # Update the runtool file to set search strategy and concrete-driven mode
     cat > "./runtool" << EOF
 #!/bin/bash
 
 java -cp lib/maze_runtool-1.0.0.jar sbst.runtool.Main "$strategy" "$concrete"
 EOF
-    
-    # Make sure runtool is executable
     chmod +x "./runtool"
     
-    # Call the test generation script
     concrete_name="SD"
     if [ "$concrete" == "true" ]; then
         concrete_name="CD"
     fi
     name="maze-${strategy//,/+}-${concrete_name}"
-    contest_generate_tests.sh "$name" 10 1 $TIME_BUDGET
+    echo "Generating tests for $name with time budget $TIME_BUDGET"
+    contest_generate_tests.sh "$name" 10 1 $TIME_BUDGET > state_log.txt 2> error_log.txt
 
-    echo "Computing metrics for $name with time budget $TIME_BUDGET" > state_log.txt 2> error_log.txt
-    # Call the metrics computation script
+    echo "Computing metrics for $name with time budget $TIME_BUDGET" 
     contest_compute_metrics.sh results_"$name"_"$TIME_BUDGET" > state_log.txt 2> error_log.txt
     
-    echo "Finished benchmark: $strategy $concrete"
+    echo "Finished benchmark $name"
     echo "-----------------------------------"
 done
 
@@ -66,4 +63,3 @@ java -cp lib/maze_runtool-1.0.0.jar sbst.runtool.Main
 EOF
 
 echo "All benchmarks completed!"
-echo "Computing scores..."

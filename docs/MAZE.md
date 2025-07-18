@@ -3,7 +3,8 @@
 This document describes the benchmarking setup for the [MAZE tool](https://github.com/ThijnK/maze) using the JUGE framework and how to run the benchmarks.
 
 MAZE was benchmarked on two sets of benchmarks: a synthetic benchmark set and an open source benchmark set.
-The synthetic benchmark set is located in the [`benchmarks_maze`](/infrastructure/benchmarks_maze/README.md) directory, and contains 10 benchmark subjects.
+The synthetic benchmark set is located in the [`benchmarks_maze`](/infrastructure/benchmarks_maze/README.md) directory.
+The thesis that introduced MAZE used 10 benchmark subjects, and this was later extended to 20 subjects for the paper.
 The open source benchmark set is the same as the one used in the Java Test Case Generation Track of the SBFT Tool Competition 2024, which is located in the [`benchmarks_12th`](/infrastructure/benchmarks_12th/README.md) directory.
 
 All raw data and scripts used in the evaluation are available in the [/maze_benchmarks](/maze_benchmarks/README.md) directory.
@@ -38,6 +39,7 @@ To replicate the benchmarks, follow these steps:
    docker run -v %cd%\tools\maze:/home/maze --name=JUGE -it --cpus=2 --memory=4g junitcontest/infrastructure:latest
    ```
    This limits the container to 2 CPUs and 4GB of RAM, which is the configuration used in the benchmarks for MAZE.
+   To run the benchmarks for other tools, simply change the volume path to the tool folder you want to benchmark.
 4. Inside the container, run the benchmarks:
 
    ```sh
@@ -46,6 +48,7 @@ To replicate the benchmarks, follow these steps:
    ```
 
    This will run MAZE on the [synthetic benchmark set](/infrastructure/benchmarks_maze/README.md) for the specified time budget, using nine different search strategy combinations.
+   10 runs will be performed for each search strategy, and the results will be stored in a folder named `results_maze_<time-budget-seconds>`.
    The search strategies are:
 
    - Symbolic-driven DFS
@@ -61,6 +64,12 @@ To replicate the benchmarks, follow these steps:
    The benchmarks for MAZE were run with the following time budgets: 5s, 10s, 30s, 60s.
    You can rerun this command with these time budgets to replicate the benchmarks.
 
+   If you are running benchmarks for other tools, use `cd /home/<tool-folder>` to change to the tool folder you want to benchmark.
+   For EvoSuite, Randoop, and Kex (the tools MAZE was compared against), a `run_benchmarks.sh` script is provided that works similarly to the one for MAZE, running the tool and computing the metrics in one go.
+   Other tools can be benchmarked by creating a similar script that runs the tool and computes the metrics, or by following the separate steps in the next section below.
+
+   Specific note for Kex: while the `run_benchmarks.sh` script accepts a time budget as an argument, the Kex tool itself requires the time budget to be set in the [`kex.ini`](/tools/kex/lib/kex-0.0.11/kex.ini) file (the `timeLimit` property in the concolic section, on line 110), so make sure to update that file with the time budget you want to use before running the benchmarks.
+
 5. After the benchmarks are completed, you can compute the final scores:
    ```sh
    contest_transcript_single.sh ./
@@ -74,13 +83,13 @@ For further instructions on how to run benchmarks using different MAZE configura
 
 ## Running a single benchmark
 
-Follow these steps to run a single benchmark, using the default configuration of the Maze tool (symbolic-driven DFS):
+Follow these steps to run a single benchmark, using the default configuration of the MAZE tool (symbolic-driven DFS):
 
 1. Build the Docker image:
    ```sh
    docker build -f Dockerfile -t junitcontest/infrastructure:latest .
    ```
-1. Run a container, specifying a volume to share the tool folder for Maze between the host and the container:
+1. Run a container, specifying a volume to share the tool folder for MAZE between the host and the container:
    ```sh
    docker run -v $(pwd)/tools/maze:/home/maze --name=JUGE -it junitcontest/infrastructure:latest
    ```
@@ -92,6 +101,7 @@ Follow these steps to run a single benchmark, using the default configuration of
    ```sh
    docker run -v %cd%\tools\maze:/home/maze --name=JUGE -it --cpus=2 --memory=4g junitcontest/infrastructure:latest
    ```
+   Again, you can change the volume path to the tool folder you want to benchmark.
 1. Inside the container, run the Maze tool:
 
    ```sh
@@ -99,9 +109,9 @@ Follow these steps to run a single benchmark, using the default configuration of
     contest_generate_tests.sh maze <number-of-runs> <first-run-number> <time-budget-seconds>
    ```
 
-   This runs the MAZE tool with the configuration specified in the [MAZE Runool`](/maze_runtool/src/main/java/sbst/runtool/MazeTool.java) file.
+   This runs the MAZE tool with the configuration specified in the [MAZE Runtool`](/maze_runtool/src/main/java/sbst/runtool/MazeTool.java) file.
    That file is where the cli arguments are passed to MAZE.
-   However, for quick changes to the search strategy and concrete-driven options, you can edit the [`runtool`](/tools/maze/runtool) script in the `tools/maze` directory.
+   However, for quick changes to either the search strategy or whether to run in concrete-driven mode, you can edit the [`runtool`](/tools/maze/runtool) script in the `tools/maze` directory.
    The `runtool` script is what will be called when you run `contest_generate_tests.sh`.
    Inside that script, you can change the current call `java -cp lib/maze_runtool-1.0.0.jar sbst.runtool.Main` to add two positional arguments, the first for the search strategy and the second for the concrete-driven option:
 
@@ -139,9 +149,9 @@ To compute the metrics (coverage, mutation analysis, etc.) and the scores, follo
 ## Benchmarking other tools
 
 This repository is designed to benchmark any Java unit test generation tool, not just MAZE.
-Some other tools are already included in the `tools` folder, including EvoSuite and Randoop, which were both used to compare against MAZE.
-To run benchmarks for other tools, you can follow the same steps as above, but specifying the right tool folder when you run the docker container.
-For convenience, a `run_benchmarks.sh` script is provided in the `tools` folder for both EvoSuite and Randoop, which runs the tool for all four time budgets used in the MAZE evaluation (5s, 10s, 30s, 60s).
+As already mentioned, you can run benchmarks for other tools by changing the volume path in the `docker run` command to the tool folder you want to benchmark.
+In the benchmarks used for MAZE, EvoSuite, Randoop, and Kex were also benchmarked.
+For convenience, a `run_benchmarks.sh` script is provided in the `tools` folder for both EvoSuite, Randoop, and Kex, which runs the tool (generates tests) and compute the metrics in one go.
 
 ## Changes to JUGE framework
 
@@ -151,6 +161,7 @@ The following changes were made to the JUGE framework to support the Maze tool:
 - Added JDK 21 installation to the Dockerfile, as Maze targets Java 21 rather than Java 8.
 - Added Z3 installation to the Dockerfile, as Maze requires Z3.
 - Added a runtool implementation for Maze according to the format required by the JUGE framework.
+- Added a runtool implementation for Kex according to the format required by the JUGE framework.
 - Other minor changes to fix issues with the framework or make things easier to use.
 
 The benchmark subjects were added in the `benchmarks_maze` directory, see the [README](/infrastructure/benchmarks_maze/README.md) in that directory for details.

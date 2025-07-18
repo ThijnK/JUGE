@@ -1,29 +1,29 @@
 #!/bin/bash
 
-# Define time budget
 # MAKE SURE TO UPDATE kex.ini TO SET THE TIME LIMIT AS WELL
-TIME_BUDGET=60
-BENCHMARK_JOB_NAME="kex"
 
-echo "Starting benchmark runs for various time budgets."
-echo "Tool Name: $BENCHMARK_JOB_NAME"
+if [[ -z "$1" ]]; then
+    echo "Error: Time budget not provided"
+    echo "Usage: $0 <time_budget_in_seconds>"
+    exit 1
+fi
+
+TIME_BUDGET="$1"
+TOOL_NAME="kex"
 
 # Make sure runtool is executable
 chmod +x "./runtool"
 
-# Loop through each time budget
 echo "-----------------------------------"
-echo "Running benchmark with Time Budget: $TIME_BUDGET seconds"
+echo "Running benchmark for $TOOL_NAME with time budget $TIME_BUDGET (seconds)"
+echo "-----------------------------------"
 
-echo "Generating tests for $BENCHMARK_JOB_NAME with time budget $TIME_BUDGET"
-contest_generate_tests.sh "$BENCHMARK_JOB_NAME" 10 1 "$TIME_BUDGET" > "state_log.txt" 2> "error_log.txt"
+echo "Generating tests for $TOOL_NAME with time budget $TIME_BUDGET"
+contest_generate_tests.sh "$TOOL_NAME" 10 1 "$TIME_BUDGET" > "state_log.txt" 2> "error_log.txt"
 
-RESULTS_DIR="results_${BENCHMARK_JOB_NAME}_${TIME_BUDGET}"
+RESULTS_DIR="results_${TOOL_NAME}_${TIME_BUDGET}"
 echo "Computing metrics for $RESULTS_DIR"
-
-# Call the metrics computation script
-# Output and error logs are made unique for each time budget
 contest_compute_metrics.sh "$RESULTS_DIR" > "state_log.txt" 2> "error_log.txt"
     
 echo "-----------------------------------"
-echo "Finished benchmark for Time Budget: $TIME_BUDGET"
+echo "Finished benchmark for $TOOL_NAME for time budget $TIME_BUDGET"
