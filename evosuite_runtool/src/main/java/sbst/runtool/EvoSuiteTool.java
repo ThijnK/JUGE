@@ -92,6 +92,8 @@ public class EvoSuiteTool implements ITestingTool {
                 "-Dstopping_condition=MAXTIME",
                 "-Dassertion_strategy=all",
                 "-Dtest_comments=false",
+                "-Dsandbox=false",
+                "-Dsandbox_mode=OFF",
                 "-Dminimize=false",
                 "-Dinline=false",
                 "-Dcoverage=false",
