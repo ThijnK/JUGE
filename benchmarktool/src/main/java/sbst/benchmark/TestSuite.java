@@ -487,6 +487,11 @@ public class TestSuite {
                 }
             }
 
+            if (fixedTestClasses.isEmpty()) {
+                Main.info("No test classes found for mutation analysis. Skipping PIT.");
+                return;
+            }
+
             // Main.debug("Running tests against generated Mutants");
             // Main.debug("Running PITWrapper with the following data:");
             // Main.debug("> CP = "+cp);
