@@ -32,7 +32,7 @@ public class MutationsEvaluator {
         MAX_THREAD = parallelism;
     }
 
-    private static final long GLOBAL_TIMEOUT = 300000; // global timeout for
+    private static final long GLOBAL_TIMEOUT = 600000; // global timeout for
     // mutation analysis
 
     public static final boolean ENABLE_REMOTE_EXECUTION;
@@ -67,7 +67,7 @@ public class MutationsEvaluator {
      * @param pTargetTest    test to run against the mutations
      */
     public MutationsEvaluator(String pClassPath, String pClassToMutate, List<String> pTargetTest,
-                              Set<TestInfo> pFlakyTests) {
+            Set<TestInfo> pFlakyTests) {
         this.classPath = pClassPath;
         this.classToMutate = pClassToMutate;
         this.targetTest = pTargetTest;
@@ -81,7 +81,8 @@ public class MutationsEvaluator {
     /**
      * This method run all covered mutations. It makes a copy of the SUT in the
      *
-     * @param tempFolder folder where the SUT will be copied for the mutation analysis
+     * @param tempFolder folder where the SUT will be copied for the mutation
+     *                   analysis
      * @param path2SUT   path of the "original" SUT
      * @throws ClassNotFoundException
      * @throws IOException
@@ -174,7 +175,6 @@ public class MutationsEvaluator {
             try {
                 MutationResults mutationResult = future.get(TestSuite.TEST_TIMEOUT, TimeUnit.MILLISECONDS);
                 MutationIdentifier id = mutationResult.getMutation_id();
-
 
                 Main.info("mutationResult.getState() " + mutationResult.getState());
 
