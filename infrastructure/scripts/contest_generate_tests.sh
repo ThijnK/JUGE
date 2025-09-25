@@ -40,13 +40,26 @@ do
                   fi
                 	>&2 echo "... moving run results to: $SUT_RUN_DIR at $(date)"
                 	>&2 echo ""
-                	mv log.txt $SUT_RUN_DIR
-                	mv log_detailed.txt $SUT_RUN_DIR
-                	mv transcript.csv $SUT_RUN_DIR
-                	mv temp $SUT_RUN_DIR
-                        mv *.log $SUT_RUN_DIR
-
-			# contest tool specific code
+                	
+                	# Wait a moment for processes to fully terminate and release file handles
+                	sleep 2
+                	
+                	# Move files with retry mechanism for temp directory
+                	mv log.txt $SUT_RUN_DIR 2>/dev/null || true
+                	mv log_detailed.txt $SUT_RUN_DIR 2>/dev/null || true
+                	mv transcript.csv $SUT_RUN_DIR 2>/dev/null || true
+                	
+                	# Retry moving temp directory if it fails (common race condition)
+                	for attempt in 1 2 3; do
+                		if mv temp $SUT_RUN_DIR 2>/dev/null; then
+                			break
+                		else
+                			>&2 echo "Failed to move temp directory (attempt $attempt), retrying in 1 second..."
+                			sleep 1
+                		fi
+                	done
+                	
+                	mv *.log $SUT_RUN_DIR 2>/dev/null || true			# contest tool specific code
 			if [ $1 == "t3" ]; then
 				# T3 tool: trdir patch
 				mv trdir $SUT_RUN_DIR
