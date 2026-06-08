@@ -1,7 +1,15 @@
 #!/bin/bash
 
+TOOLNAME=$1
+#echo "### toolname: $TOOLNAME"
+
 # switch to environment JVM as needed
 JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+
+if [ $TOOLNAME == "t3" ]; then
+	JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+fi
+
 #JAVA_HOME=/usr
 JAVAC_CMD=$JAVA_HOME/bin/javac
 JAVA_CMD=$JAVA_HOME/bin/java

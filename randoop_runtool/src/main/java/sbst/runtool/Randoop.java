@@ -41,6 +41,8 @@ public class Randoop implements ITestingTool {
             command.add("gentests");
             command.add("--testclass=" + cName);
             command.add("--time-limit=" + timeBudget);
+            // WP explicitly allowing non-determinism:
+            command.add("--deterministic=false");
             command.add("--junit-output-dir=./temp/testcases/");
             System.err.println("Running Randoop with command: " + command);
             pbuilder.command(command);

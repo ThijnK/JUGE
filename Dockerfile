@@ -3,11 +3,15 @@
 FROM ubuntu:22.04
 
 RUN apt-get update && \
-    apt-get install -y openjdk-8-jdk openjdk-21-jdk unzip wget vim
+    apt-get install -y openjdk-8-jdk openjdk-11-jdk openjdk-21-jdk unzip wget vim
 
 # Set Java 8 as the default
 RUN update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java && \
     update-alternatives --set javac /usr/lib/jvm/java-8-openjdk-amd64/bin/javac
+
+# few utilities
+RUN apt-get install nano
+RUN apt-get install bash-completion
 
 # Install cvc4
 RUN apt-get install -y cvc4

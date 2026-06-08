@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# switch to environment JVM as needed
+#JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+
+java -cp lib/t3_runtool-1.0.0.jar sbst.runtool.Main
