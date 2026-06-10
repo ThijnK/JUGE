@@ -6,6 +6,7 @@ TOOLNAME=$1
 # switch to environment JVM as needed
 JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
+# t3 runs using java 11
 if [ $TOOLNAME == "t3" ]; then
 	JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 fi
