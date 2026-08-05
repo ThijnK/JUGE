@@ -62,15 +62,17 @@ public class MazeTool implements ITestingTool {
             command.add("--output-path=./temp/testcases/");
             command.add("--log-level=INFO");
             // params which are configurable in this BM:
+            command.add("--time-budget=" + timeBudget);
             command.add("--strategy=" + strategies);
             //command.add("--concrete-driven=" + concreteDriven);
             command.add("--minimalistic-suite=" + this.minimalisticSuite) ;
             command.add("--path-length-cov=" + this.pathLengthToCover) ;
-            command.add("--target-path-aging=" + this.pathAging) ;
+            command.add("--target-path-aging=" + this.pathAging) ; 
             // other params which are fixed:
             command.add("--max-depth=400");      
             command.add("--max-array-size=10") ;  
-            command.add("--time-budget=" + timeBudget);
+            command.add("--constrain-FP-params-to-normal-numbers=true") ;
+            command.add("--check-divbyZero=true") ;     		     
             command.add("--junit-version=JUnit4");
             // reporting params:
             command.add("--export-summary=true") ; 	
