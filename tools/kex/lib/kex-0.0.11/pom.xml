@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
     <version>0.0.11</version>
     <modules>
-        <module>kex-test</module>
+        <module>kex-test</module> 
         <module>kex-core</module>
         <module>kex-annotation-processor</module>
         <module>kex-runner</module>
