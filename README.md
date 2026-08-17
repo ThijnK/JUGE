@@ -1,6 +1,14 @@
-# JUnit Generation Benchmarking Infrastructure (JUGE)
+# MAZE Benchmarking Infrastructure
 
-**_This is a fork of ThijnK's [JUGE for MAZE](https://github.com/ThijnK/JUGE), which in turn is a fork of the original [JUGE repository](https://github.com/JUnitContest/JUGE). ThijnK's JUGE is customized to benchmark the [Maze tool](https://github.com/ThijnK/maze). For details on the modifications and usage, see [docs/MAZE.md](docs/MAZE.md)._**
+This contains the benchmarking framework to benchmark [MAZE](https://github.com/ThijnK/maze) and its search strategies. You can use this framework to compare the performance of the strategies to each other. Or you can use the framework to compare MAZE and its strategies to other Java test generators.
+
+**NOTE:** _This is a fork of ThijnK's [JUGE for MAZE](https://github.com/ThijnK/JUGE), which in turn is a fork of the original [JUGE repository](https://github.com/JUnitContest/JUGE). JUGE is a framework for benchmarking Java unit testing tools. ThijnK's JUGE is customized to benchmark the [Maze tool](https://github.com/ThijnK/maze)._ 
+
+## MAZE BM README
+
+For the actual README of MAZE benchmarking,see [docs/MAZE.md](docs/MAZE.md)._
+
+## Original JUGE README
 
 Here you will find the source code to the JUGE and instructions on how to test your tool with the infrastructure.
 
@@ -8,7 +16,7 @@ For information about the past editions of the JUnit Competition, see [https://j
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4904393.svg)](https://doi.org/10.5281/zenodo.4904393)
 
-# Documentation
+## Documentation
 
 See [docs/README.md](docs/USERGUIDE.md) for the user guide and [docs/DEVELOPERS.md](docs/CONTRIBUTORGUIDE.md) for the contributor guide.
 
