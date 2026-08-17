@@ -2,4 +2,6 @@
 
 #java -cp lib/maze_runtool-1.1.jar sbst.runtool.Main PCS true 3 0
 
-java -cp lib/maze_runtool-1.1.jar sbst.runtool.Main BFS false 0 0
+#java -cp lib/maze_runtool-1.1.jar sbst.runtool.Main SGS true 0 0
+
+java -cp lib/maze_runtool-1.1.jar sbst.runtool.Main FOS,COS true 0 0

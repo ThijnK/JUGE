@@ -4,7 +4,9 @@ This directory contains the synthetic benchmark subjects used to benchmark the M
 
 ## Subjects
 
-The following are the (synthetic) subjects in this directory:
+The configuration file `benchmarks.list` lists all subjects. The file `orig-benchmarks.list` lists only the subjects from the original MAZE framework.
+
+#### Subjects from the original MAZE benchmark
 
 - `AckermannPeter`: Implementation of the Ackermann-Peter function.
 - `BinarySearch`: Implementation of a binary search algorithm on an int array.
@@ -16,9 +18,6 @@ The following are the (synthetic) subjects in this directory:
 - `QuickSort`: Implementation of the quicksort algorithm on an int array.
 - `SinglyLinkedList`: Implements a singly linked list with various operations (e.g., add, delete, etc.).
 - `TriangleClassifier`: Classifies a triangle based on its sides (e.g., equilateral, isosceles, etc.).
-
-Additional subjects that were added later:
-
 - `BinaryTree`: Provides a binary tree implementation and various traversal and utility methods (e.g., in-order, pre-order, post-order traversal, height calculation, finding certain values).
 - `BitwiseManipulator`: Class that performs various bitwise operations on integers.
 - `BracketBalancer`: Class that checks whether a string of brackets (represented as an array of characters) is balanced.
@@ -29,3 +28,13 @@ Additional subjects that were added later:
 - `IntUtils`: Class that provides various utility methods for integers, such as calculating the GCD, LCM, and factorial.
 - `StringPatternMatcher`: Implements a simple string pattern matching algorithm based on regex-like syntax.
 - `StringUtils`: Class that provides various utility methods for strings, such as reversing a string, checking for palindromes, and finding really specific substrings (e.g., alternating digits and letters).
+
+#### Subjects ported from SVComp
+
+- `BellmanFord_FunSat01`
+- `RedBlackTree_MemSat01`
+- `float_nonlinear_calculation.Bessel`
+- `float_nonlinear_calculation.Conflict`
+- `float_nonlinear_calculation.Euler`
+- `float_nonlinear_calculation.Optimization`
+- `MinePump.spec1_5_product1.Actions`
