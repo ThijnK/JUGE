@@ -1,12 +1,12 @@
-# MAZE Benchmarking Infrastructure
+# JUGE-MAZE BMF (Benchmarking Framework)
 
-This contains the benchmarking framework to benchmark [MAZE](https://github.com/ThijnK/maze) and its search strategies. You can use this framework to compare the performance of the strategies to each other. Or you can use the framework to compare MAZE and its strategies to other Java test generators.
+This project contains the benchmarking framework to benchmark [MAZE](https://github.com/ThijnK/maze) and its search strategies. MAZE is an automated unit test generator for Java. You can use this framework to compare the performance of the strategies to each other and to other Java test generators.
 
-**NOTE:** _This is a fork of ThijnK's [JUGE for MAZE](https://github.com/ThijnK/JUGE), which in turn is a fork of the original [JUGE repository](https://github.com/JUnitContest/JUGE). JUGE is a framework for benchmarking Java unit testing tools. ThijnK's JUGE is customized to benchmark the [Maze tool](https://github.com/ThijnK/maze)._ 
+The BM Framework is an instance of the [JUGE framework](https://github.com/JUnitContest/JUGE) for benchmarking Java unit testing tools (this project is forked from [JUGE repository](https://github.com/JUnitContest/JUGE), customized to benchmark [MAZE](https://github.com/ThijnK/maze)
 
-## MAZE BM README
+## JUGE-MAZE BMF README
 
-For the actual README of MAZE benchmarking,see [docs/MAZE.md](docs/MAZE.md)._
+To read more about JUGE-MAZE BMF see [docs/MAZE.md](docs/MAZE.md).
 
 ## Original JUGE README
 

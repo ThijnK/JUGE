@@ -4,9 +4,11 @@ This directory contains the synthetic benchmark subjects used to benchmark the M
 
 ## Subjects
 
-The configuration file `benchmarks.list` lists all subjects. The file `orig-benchmarks.list` lists only the subjects from the original MAZE framework.
+The configuration file `benchmarks.list` lists all subjects. The file `orig-benchmarks.list` lists the subjects from MAZE benchmark 2025.
 
-#### Subjects from the original MAZE benchmark
+#### Subjects from the MAZE benchmark 2025
+
+This set is also included in [MAZE source code](https://github.com/ThijnK/maze).
 
 - `AckermannPeter`: Implementation of the Ackermann-Peter function.
 - `BinarySearch`: Implementation of a binary search algorithm on an int array.
