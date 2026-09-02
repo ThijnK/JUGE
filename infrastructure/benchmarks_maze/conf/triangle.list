@@ -1,0 +1,14 @@
+{
+MZ-TRIANGLE=
+{
+  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
+  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
+  classes=(
+    nl.uu.maze.benchmarks.TriangleClassifier
+  )
+
+  classpath=(
+    /var/benchmarks/projects/maze_benchmarks/target/classes
+  )
+}
+}

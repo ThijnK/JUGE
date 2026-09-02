@@ -1,5 +1,5 @@
 {
-MZ-ACK=
+ACK=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -11,7 +11,7 @@ MZ-ACK=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-SEARCH=
+SEARCH=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -23,7 +23,7 @@ MZ-SEARCH=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-PATHS=
+PATHS=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -35,7 +35,7 @@ MZ-PATHS=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-EXPR=
+EXPR=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -47,7 +47,7 @@ MZ-EXPR=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-FLOAT=
+FLOAT=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -59,7 +59,7 @@ MZ-FLOAT=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-MATRIX=
+MATRIX=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -71,7 +71,7 @@ MZ-MATRIX=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-LOOPS=
+LOOPS=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -83,7 +83,7 @@ MZ-LOOPS=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-SORT=
+SORT=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -95,7 +95,7 @@ MZ-SORT=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-LIST=
+LIST=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -107,7 +107,7 @@ MZ-LIST=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-TRIANGLE=
+TRIANGLE=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -119,7 +119,7 @@ MZ-TRIANGLE=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-BINTREE=
+BINTREE=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -131,7 +131,7 @@ MZ-BINTREE=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-BITWISE=
+BITWISE=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -143,7 +143,7 @@ MZ-BITWISE=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-BRACKETS=
+BRACKETS=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -155,7 +155,7 @@ MZ-BRACKETS=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-COMPONENTS=
+COMPONENTS=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -167,7 +167,7 @@ MZ-COMPONENTS=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-DIJKSTRA=
+DIJKSTRA=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -179,7 +179,7 @@ MZ-DIJKSTRA=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-GRAPH=
+GRAPH=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -191,7 +191,7 @@ MZ-GRAPH=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-HEAPSORT=
+HEAPSORT=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -203,7 +203,7 @@ MZ-HEAPSORT=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-INTUTILS=
+INTUTILS=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -215,7 +215,7 @@ MZ-INTUTILS=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-PATTERNMATCH=
+PATTERNMATCH=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
@@ -227,96 +227,12 @@ MZ-PATTERNMATCH=
     /var/benchmarks/projects/maze_benchmarks/target/classes
   )
 }
-MZ-STRUTILS=
+STRUTILS=
 {
   src=/var/benchmarks/projects/maze_benchmarks/src/main/java
   bin=/var/benchmarks/projects/maze_benchmarks/target/classes
   classes=(
     nl.uu.maze.benchmarks.StringUtils
-  )
-
-  classpath=(
-    /var/benchmarks/projects/maze_benchmarks/target/classes
-  )
-}
-SVC-BELLMANFORD=
-{
-  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
-  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
-  classes=(
-    nl.uu.maze.benchmarks.svcomp.algorithms.BellmanFord_FunSat01
-  )
-
-  classpath=(
-    /var/benchmarks/projects/maze_benchmarks/target/classes
-  )
-}
-SVC-RBT=
-{
-  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
-  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
-  classes=(
-    nl.uu.maze.benchmarks.svcomp.algorithms.RedBlackTree_MemSat01.RedBlackTree_MemSat01
-  )
-
-  classpath=(
-    /var/benchmarks/projects/maze_benchmarks/target/classes
-  )
-}
-SVC-BESSEL=
-{
-  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
-  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
-  classes=(
-    nl.uu.maze.benchmarks.svcomp.float_nonlinear_calculation.Bessel
-  )
-
-  classpath=(
-    /var/benchmarks/projects/maze_benchmarks/target/classes
-  )
-}
-SVC-CONFLICT=
-{
-  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
-  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
-  classes=(
-    nl.uu.maze.benchmarks.svcomp.float_nonlinear_calculation.Conflict
-  )
-
-  classpath=(
-    /var/benchmarks/projects/maze_benchmarks/target/classes
-  )
-}
-SVC-EULER=
-{
-  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
-  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
-  classes=(
-    nl.uu.maze.benchmarks.svcomp.float_nonlinear_calculation.Euler
-  )
-
-  classpath=(
-    /var/benchmarks/projects/maze_benchmarks/target/classes
-  )
-}
-SVC-OPTIMIZATION=
-{
-  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
-  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
-  classes=(
-    nl.uu.maze.benchmarks.svcomp.float_nonlinear_calculation.Optimization
-  )
-
-  classpath=(
-    /var/benchmarks/projects/maze_benchmarks/target/classes
-  )
-}
-SVC-MINEPUMP=
-{
-  src=/var/benchmarks/projects/maze_benchmarks/src/main/java
-  bin=/var/benchmarks/projects/maze_benchmarks/target/classes
-  classes=(
-    nl.uu.maze.benchmarks.svcomp.MinePump.spec1_5_product1.Actions
   )
 
   classpath=(

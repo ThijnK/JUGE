@@ -10,11 +10,17 @@ public class MazeTool implements ITestingTool {
     private File mazeJar = new File("lib", "maze.jar");
 
     private String strategies; // comma-separated list of strategies
-    private String concreteDriven; // "true" or "false"
+    private String concreteDriven; // "true" or "false"  --> not used in this BM
+    private String minimalisticSuite; // "true" or "false"
+    private String pathLengthToCover; // -1,0, or >0
+    private String pathAging; // -1,0, or >0
 
-    public MazeTool(String strategies, String concreteDriven) {
+    public MazeTool(String strategies, String minimalisticSuite, String pathLengthToCover, String pathAging) {
         this.strategies = strategies;
-        this.concreteDriven = concreteDriven;
+        //this.concreteDriven = concreteDriven;
+        this.minimalisticSuite = minimalisticSuite ;
+        this.pathLengthToCover = pathLengthToCover ;
+        this.pathAging = pathAging ;
     }
 
     public List<File> getExtraClassPath() {
@@ -55,11 +61,22 @@ public class MazeTool implements ITestingTool {
             command.add("--classname=" + className);
             command.add("--output-path=./temp/testcases/");
             command.add("--log-level=INFO");
-            command.add("--strategy=" + strategies);
-            command.add("--concrete-driven=" + concreteDriven);
-            command.add("--max-depth=200");
+            // params which are configurable in this BM:
             command.add("--time-budget=" + timeBudget);
+            command.add("--strategy=" + strategies);
+            //command.add("--concrete-driven=" + concreteDriven);
+            command.add("--minimalistic-suite=" + this.minimalisticSuite) ;
+            command.add("--path-length-cov=" + this.pathLengthToCover) ;
+            command.add("--target-path-aging=" + this.pathAging) ; 
+            // other params which are fixed:
+            command.add("--max-depth=400");      
+            command.add("--max-array-size=10") ;  
+            command.add("--constrain-FP-params-to-normal-numbers=true") ;
+            command.add("--check-divbyZero=true") ;     		     
             command.add("--junit-version=JUnit4");
+            // reporting params:
+            command.add("--export-summary=true") ; 	
+            
             System.err.println("Running Maze with command: " + command);
             pbuilder.command(command);
 
