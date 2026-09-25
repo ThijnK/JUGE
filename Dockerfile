@@ -1,9 +1,18 @@
-# TODO Automate the build of benchmarktool in a temporary container
+FROM maven:3.9.16-eclipse-temurin-21-noble@sha256:a972570be789ee5c9fa23446a8914ac7327560b5c022f662cfa9452aef829f18 AS runner-build
+WORKDIR /build
+COPY pom.xml checkstyle.xml ./
+COPY runtool/ runtool/
+COPY benchmarktool/ benchmarktool/
+RUN mvn -B -ntp -N -DskipTests install \
+    && mvn -B -ntp -f runtool/pom.xml -DskipTests install \
+    && mvn -B -ntp -f benchmarktool/pom.xml -DskipTests package
 
 FROM ubuntu:22.04
 
 RUN apt-get update && \
-    apt-get install -y openjdk-8-jdk openjdk-11-jdk openjdk-21-jdk unzip wget vim
+    apt-get install -y openjdk-8-jdk openjdk-11-jdk openjdk-21-jdk unzip wget vim python3
+
+ENV MAZE_JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 
 # Set Java 8 as the default
 RUN update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java && \
@@ -43,7 +52,7 @@ COPY infrastructure/lib/pitest-command-line-1.1.11.jar /usr/local/bin/lib/pitest
 COPY infrastructure/lib/jacocoagent.jar /usr/local/bin/lib/jacocoagent.jar
 
 # Copy the benchmarktool utilities
-COPY benchmarktool/lib/benchmarktool-1.0.0-shaded.jar /usr/local/bin/lib/benchmarktool-shaded.jar
+COPY --from=runner-build /build/benchmarktool/target/benchmarktool-1.0.0-shaded.jar /usr/local/bin/lib/benchmarktool-shaded.jar
 
 # Copy the projects and configuration file to run the tools on a set of CUTs
 RUN mkdir /var/benchmarks

@@ -39,4 +39,4 @@ exec $JAVA_CMD -ea -Dsbst.benchmark.jacoco="$JACOCO_JAR" \
 	-Dsbst.benchmark.junit="$JUNIT_JAR" \
 	-Dsbst.benchmark.junit.dependency="$JUNIT_DEP_JAR" \
 	-Dsbst.benchmark.pitest="$PITEST_JAR" \
-	-jar "$JAR" $*
+	-jar "$JAR" "$@"

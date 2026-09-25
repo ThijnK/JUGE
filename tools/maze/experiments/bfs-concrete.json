@@ -1,0 +1,9 @@
+{
+  "name": "bfs-concrete",
+  "mode": "concrete",
+  "arguments": [
+    "--strategy", "BFS",
+    "--minimization=true", "--max-depth=400", "--max-array-size=10",
+    "--constrain-fp-params-to-normal-numbers=true", "--check-division-by-zero=true"
+  ]
+}

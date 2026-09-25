@@ -30,3 +30,7 @@ Gemfile.lock
 
 # Benchmark results
 results*/
+# Python validation scripts
+__pycache__/
+
+/tools/maze/lib/maze-adapter.jar

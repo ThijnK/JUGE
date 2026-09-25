@@ -122,6 +122,10 @@ public class RunTool {
                             Main.info("\n\n Execution finished with no timeout");
                         } catch (TimeoutException ex) {
                             Main.info("\n\nA timeout occurred waiting for signal READY");
+                            // MAZE batches require all classes to complete before any scoring.
+                            if (System.getenv("JUGE_MAZE_BATCH_ID") != null) {
+                                throw new IOException("MAZE timed out for " + cname, ex);
+                            }
                             // kill subprocess
                         }
                     } else {

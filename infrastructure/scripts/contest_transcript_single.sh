@@ -3,6 +3,7 @@
 # author: Urko Rueda (2016)
 
 RESULTS_TRANSCRIPT="results.tmp"
+script_dir=$(cd -- "$(dirname -- "$0")" && pwd)
 
 if [ $# -ne 1 ]
 then
@@ -18,11 +19,21 @@ header="tool,benchmark,class,run,preparationTime,generationTime,executionTime,te
 echo $header >$RESULTS_TRANSCRIPT
 echo "Writing all transcripts into: $RESULTS_TRANSCRIPT"
 idx=0
-find $1 -name "transcript.csv" | grep "metrics/" | while read TRANSCRIPT
+find "$1" -path "*/metrics/transcript.csv" | while IFS= read -r TRANSCRIPT
 do
+    run_dir=$(dirname "$(dirname "$TRANSCRIPT")")
+    case "$(basename "$(dirname "$run_dir")")" in
+      results_maze_*|results_maze-*)
+        if ! python3 "$script_dir/maze_validate_generation.py" "$run_dir" ||
+            [ ! -f "$(dirname "$TRANSCRIPT")/COMPUTATION_FINISHED.txt" ]; then
+            echo "Excluding incomplete MAZE results: $run_dir" >&2
+            continue
+        fi
+        ;;
+    esac
 	idx=$(( $idx + 1 ))
 	echo "  doing: [$idx] $TRANSCRIPT"
-	cat $TRANSCRIPT | while read TR_LINE
+	cat "$TRANSCRIPT" | while IFS= read -r TR_LINE
 	do
 		if [[ $TR_LINE != $header ]] && [[ -n $TR_LINE ]]
 		then
