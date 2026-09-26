@@ -1,128 +1,206 @@
-# MAZE Benchmarking
+# Benchmarking MAZE
 
-This document describes the benchmarking setup for the [MAZE tool](https://github.com/ThijnK/maze) using the JUGE framework and how to run the benchmarks.
+JUGE runs the benchmark subjects, repetitions, coverage measurement, and mutation
+analysis. MAZE remains a separate package: this repository's adapter launches it
+with a named experiment configuration. External strategies and heuristics use the
+same path as shipped strategies; no launcher or Java source edits are necessary.
 
-A set of classes is provided for benchmarking. They are located in the [`benchmarks_maze`](/infrastructure/benchmarks_maze/README.md) directory. Results and raw data from the benchmarking are provided as separate zips, attached to Releases of this repository. The benchmarking to obtain that data is completely replicable using the Docker setup in this repository.
-Instructions on how to replicate the benchmarks are provided below.
-Instructions to run a single benchmark are also provided, in case you want to test the tool with a different configuration, different search strategies, or on a different set of benchmarks.
+## Prepare the environment
 
-Included in this benchmark framework are several other Java testing tools which you can run for comparison: Randoop, T3, Evosuite, and Kex. Randoom and T3 are random testing tools. Evosuite uses search algorithms (evolutionary and local search). Kex uses symb olic execution. **Note:** their deployment can be found in the directory [tools](./tools). Each tool's sub-directory there (e.g. maze, or randoop) contains the binary of the tool along with an implementation of the tool-side of JUGE benchmarking protocol. If you are curious how this protocol is implemented, you can check the source code in the directory `toolname_runtool`. The implementation would call the tool executable, passing to it some configuration; so it is also the place to inspect what the exact configuration used on each tool.
+Use the published [MAZE v1.2.0 package](https://github.com/ThijnK/maze/releases/tag/v1.2.0).
+Download it separately; MAZE does not need to be copied into this repository or
+built from source.
 
+The full JUGE image currently targets Linux x86-64: it uses Java 8 for the legacy
+coverage/mutation tools and Java 21 for MAZE. On an Apple Silicon Mac, build and run
+it with `--platform linux/amd64`, and select MAZE's **amd64** archive. You do not
+need Java or Z3 installed on the host.
 
-## Prerequisites
+From the JUGE checkout, download and verify the package in a sibling directory:
 
-- Docker installed on your machine
-- Docker daemon running
+```sh
+mkdir -p ../maze-packages
+(
+  cd ../maze-packages
+  curl --fail --location --remote-name https://github.com/ThijnK/maze/releases/download/v1.2.0/maze-1.2.0-linux-amd64.tar.gz
+  curl --fail --location --remote-name https://github.com/ThijnK/maze/releases/download/v1.2.0/maze-1.2.0-linux-amd64.tar.gz.sha256
+  shasum -a 256 -c maze-1.2.0-linux-amd64.tar.gz.sha256 &&
+    tar -xzf maze-1.2.0-linux-amd64.tar.gz
+)
+MAZE_PACKAGE="$(cd ../maze-packages/maze-1.2.0-linux-amd64 && pwd)"
+```
 
-## Replicating MAZE benchmarking
+Keep that directory for future runs. Build and start JUGE from the same shell:
 
-To replicate the benchmarking of MAZE, follow these steps:
+```sh
+docker build --platform linux/amd64 -t juge-maze .
+docker run --rm -it --platform linux/amd64 --cpus=2 --memory=4g \
+  -v "$PWD:/juge" -v "$MAZE_PACKAGE:/opt/maze:ro" \
+  -v /absolute/path/to/research:/research \
+  -e MAZE_HOME=/opt/maze -w /juge juge-maze bash
+```
 
-1. Clone this repository:
-   ```sh
-   git clone https://github.com/ThijnK/JUGE
-   ```
-2. Build the Docker image:
-   ```sh
-   docker build -f Dockerfile -t junitcontest/infrastructure:latest .
-   ```
-3. Run a container, specifying a volume to share the tool folder for MAZE between the host and the container:
-   ```sh
-   docker run -v $(pwd)/tools/maze:/home/maze --name=JUGE -it --cpus=2 --memory=4g junitcontest/infrastructure:latest
-   ```
-   Or, on Windows:
-   ```sh
-   docker run -v %cd%\tools\maze:/home/maze --name=JUGE -it --cpus=2 --memory=4g junitcontest/infrastructure:latest
-   ```
-   This limits the container to 2 CPUs and 4GB of RAM, which is the configuration we used when we ran the benchmarking for MAZE.
-   To run the benchmarks for other tools, simply change the volume path to the tool folder you want to benchmark.
-4. Inside the container, run the benchmarks:
+Inside the container, compile the adapter against the selected package:
 
-   ```sh
-    cd /home/maze
-    ./run_benchmarks.sh <time-budget-seconds>
-   ```
+```sh
+export PATH="$MAZE_JAVA_HOME/bin:$PATH"
+sh tools/maze/build-adapter.sh
+cd tools/maze
+```
 
-   This will run MAZE on the aforementioned [benchmark set](/infrastructure/benchmarks_maze/README.md) for the specified time budget, using different search strategy combinations listed below. Symbolic-driven mode is used.
-   10 runs will be performed for each search strategy, and the results will be stored in a folder named `results_maze_<time-budget-seconds>`.
-   The search strategies are:
+The build produces `lib/maze-adapter.jar`. MAZE's JAR supplies the JSON dependency;
+the adapter does not compile against MAZE's engine classes. The Docker build also
+rebuilds JUGE's benchmark runner from source, so its timeout handling cannot lag
+behind a checked-in binary.
 
-   - Symbolic-driven DFS
-   - Symbolic-driven BFS
-   - Symbolic-driven SGS
-   - Symbolic-driven RPS+COS
-   - Symbolic-driven FOS
-   - Symbolic-driven FOS+COS
+## Describe an experiment
 
-   We used 10s and 60s time budget.
+An experiment file names the variant, chooses an execution mode, and supplies
+MAZE arguments. For example, `/research/depth-symbolic.json`:
 
-5. After the benchmarks are completed, you can compute the final scores:
-   ```sh
-   contest_transcript_single.sh ./
-   score.sh results.tmp ./score
-   ```
-   This will create a score folder with the results of the benchmarks, including the Friedman test results, p-values, scores, and rankings.
-   If in the previous step you ran the benchmarks with 10s and 60s time budgets, the resulting scores should correspond to the ones we obtained in our benchmarking.
-   Additional metrics and plots used in the evaluation are all derived from the raw data in the `results.tmp` file, or from results from a subset of strategies.
+```json
+{
+  "name": "depth-symbolic",
+  "mode": "symbolic",
+  "arguments": [
+    "--plugin", "research.jar",
+    "--search-config", "search.json",
+    "--minimization=true", "--max-depth=400", "--max-array-size=10"
+  ]
+}
+```
 
-For further instructions on how to run benchmarks using different MAZE configurations, or different benchmark sets, see the next section.
+Paths in `arguments` are relative to the **experiment file's directory**. Use
+MAZE's existing search JSON in `search.json`, including constructor options,
+heuristic combinations, and repeated strategy instances. Each occurrence remains
+separate. Repeat `--plugin` for dependencies. Build the research JAR against
+`/opt/maze/maze.jar`; the [MAZE author guide](https://github.com/ThijnK/maze/blob/main/docs/search-extensions.md)
+provides complete examples.
 
-## Running a single benchmark
+For a shipped baseline, use `"arguments": ["--strategy", "BFS", ...]` instead.
+Copy an experiment and set `"mode": "concrete"` to compare the other execution mode.
+Give different variants different names. Two example baseline files are supplied
+under `tools/maze/experiments/`.
 
-The above instruction will run the benchmarking for various MAZE strategies. If you just one to benchmark a single strategy, follow these steps below.
+JUGE supplies the classpath, target class, output directory, time budget, mode,
+JUnit 4 format, and summary export. Those settings, their short aliases, help,
+version, and argument-response files cannot be passed through `arguments`.
+Other options are validated by MAZE. Unknown experiment fields are rejected.
+The old positional settings and `orig-runtool` editing workflow have been removed.
 
-1. Go to the folder `./tools/maze`. Copy the script file `orig-runtool` to `runtool`. Edit the resulting file `runtool`: you can change the current call `java -cp lib/maze_runtool-1.0.0.jar sbst.runtool.Main` to add several positional arguments, as explained in the comment part of the script. E.g. you can specify which strategy and other settings you want to benchmark. E.g. you can choose DFS or BFS as the strategy.
- The search strategy option is the same as expected by the MAZE cli, described in the [MAZE documentation](https://github.com/ThijnK/maze).
+## Run and score experiments
 
-1. Build the Docker image:
-   ```sh
-   docker build -f Dockerfile -t junitcontest/infrastructure:latest .
-   ```
-1. Run a container, specifying a volume to share the tool folder for MAZE between the host and the container:
-   ```sh
-   docker run -v $(pwd)/tools/maze:/home/maze --name=JUGE -it junitcontest/infrastructure:latest
-   ```
-   Or, on Windows:
-   ```sh
-   docker run -v %cd%\tools\maze:/home/maze --name=JUGE -it junitcontest/infrastructure:latest
-   ```
-   To limit the container to 2 CPUs and 4GB of RAM, which is the configuration used in the benchmarks for MAZE, you can use the following command:
-   ```sh
-   docker run -v %cd%\tools\maze:/home/maze --name=JUGE -it --cpus=2 --memory=4g junitcontest/infrastructure:latest
-   ```
-   Again, you can change the volume path to the tool folder you want to benchmark.
-1. Inside the container, run the Maze tool:
+From `tools/maze`, with the environment above:
 
-   ```sh
-    cd /home/maze
-    contest_generate_tests.sh maze <number-of-runs> <first-run-number> <time-budget-seconds>
-   ```
+```sh
+./run_benchmarks.sh 10 10 experiments/bfs-symbolic.json /research/depth-symbolic.json
+contest_transcript_single.sh .
+score.sh results.tmp score
+```
 
-   This runs the MAZE tool with the setting that was in the script file `runtool` that you made in step-1. Other settings are specified in the source code of [MAZE Runtool (Java)](/maze_runtool/src/main/java/sbst/runtool/MazeTool.java) file.
-   That file is where the cli arguments are passed to MAZE.
-   However, for quick changes to e.g. the search strategy or whether you want to apply minimalization, you can edit the aforementioned [`runtool`](/tools/maze/runtool) script.
-   The script is what will be called when you run `contest_generate_tests.sh`.
+The first two arguments are seconds per class and repetition count. Each named
+experiment gets `results_maze-<name>_<budget>/`, with one subdirectory per subject
+and repetition. The script runs generation and metrics for each configuration.
+Duplicate names and existing result directories are rejected before starting.
+Repeat the command with budget `60` for a separate comparison. Keep all engine
+settings consistent across variants except those being compared.
 
-   This will create a folder called `results_maze_<time-budget-seconds>` in the current directory, containing the generated tests for the benchmark subjects.
+For individual stages:
 
-1. To compute the metrics (coverage, mutation analysis, etc.) run the following command:
-   ```sh
-   contest_compute_metrics.sh results_maze_<time-budget-seconds>
-   ```
-   This will create a `metrics` subfolder in the folders of each benchmark subject in the `results_maze_<time-budget-seconds>` folder.
-1. Combine metrics:
-   ```sh
-   contest_transcript_single.sh results_maze_<time-budget-seconds>
-   ```
-   This will create a `results.tmp` file with all metrics in a single file.
-   You can change `results_maze_<time-budget-seconds>` to `./` to combine all metrics from different results folders.
-1. Compute the score:
-   ```sh
-   score.sh results.tmp <output-folder>
-   ```
-   Creates a `detailed_score.csv` and `score_per_subject.csv` file with the scores for each benchmark subject in the `results_maze_<time-budget-seconds>` folder.
-   Score calculations are described in the [README](/infrastructure/README) file in the `infrastructure` folder.
-   It also performs a statistical analysis of the scores if multiple tools (or multiple runs of the same tool with different names) are present in the `results.tmp` file.
+```sh
+export MAZE_EXPERIMENT=/research/depth-symbolic.json
+contest_generate_tests.sh maze-depth-symbolic 10 1 10
+contest_compute_metrics.sh results_maze-depth-symbolic_10
+contest_transcript_single.sh results_maze-depth-symbolic_10
+score.sh results.tmp score
+```
+
+Keep `MAZE_HOME`, `MAZE_EXPERIMENT`, and `MAZE_JAVA_HOME` available when computing
+metrics. Score output includes `detailed_score.csv`, `score_per_subject.csv`, and
+statistical comparisons; see the [infrastructure documentation](../infrastructure/README).
+Aggregating `.` includes completed experiments from multiple budgets and tools.
+
+### Completion and failures
+
+Each generation attempt has a new batch identity. JUGE archives each class’s tests
+and timing separately, and computes metrics from working copies of those archives.
+The adapter creates a fresh
+output directory for every MAZE invocation, requires exit status zero and a
+matching `completed` record, then publishes the Java tests for JUGE. Logs and
+partial output remain under `temp/maze-run-*/` for diagnosis. The batch record
+includes the exact experiment arguments, MAZE JAR hash, invocation identities,
+and hashes of the MAZE records (which contain plugin identities and search options).
+
+`GENERATION_FINISHED.txt` is written only after a successful JUGE process and a
+complete matching batch. Failure creates `GENERATION_FAILED.txt` and a nonzero
+script exit. Metrics and transcript aggregation independently verify completion;
+stale records, changed records or archived tests, unsuccessful processes, and
+incomplete metrics are excluded. Failed experiments do not contribute zero-coverage scores. Inspect
+failures before comparing experiments with missing repetitions.
+
+### Historical benchmark results
+
+The original study used symbolic DFS, BFS, SGS, RPS+COS, FOS, and FOS+COS, with
+minimization enabled, path-length coverage `0`, target-path aging `0`, maximum
+depth `400`, maximum array size `10`, normal floating-point constraints, and
+explicit division-by-zero checks. It used ten repetitions at 10 and 60 seconds,
+with two CPUs and 4 GiB of memory.
+
+Results and raw data are attached to this repository's releases. To reproduce
+those historical results, use the corresponding historical MAZE/JUGE revisions.
+The current adapter uses the new CLI and allows new comparisons; changes to MAZE
+can affect results, so a current run should not be described as an exact replay of
+an old release.
+
+## Validate the integration
+
+The development image includes Java 21 for MAZE, Java 8 for JUGE's legacy metric
+tools, and Python. It runs on either Linux architecture supported by MAZE. Build
+it and check the adapter without downloading dependencies during the test:
+
+```sh
+docker build -f maze_runtool/Dockerfile -t juge-maze-check .
+docker run --rm --network none -v "$PWD:/juge" \
+  -v /absolute/path/to/unpacked-maze:/opt/maze:ro -e MAZE_HOME=/opt/maze \
+  juge-maze-check sh maze_runtool/verify.sh
+```
+
+Select a package matching this container's architecture: on Apple Silicon, use
+the **arm64** release asset for this development image. The full image described
+earlier still requires **amd64**. The checks compile
+separate extensions, exercise built-in/strategy/heuristic/composed configurations
+in both modes, compile and run generated JUnit suites, and exercise multi-class
+protocol handling and rejection of failed/stale experiments.
+
+To also run the actual JUGE generation, JaCoCo coverage, PIT mutation analysis,
+and transcript aggregation, first build the runner and populate a Maven cache:
+
+```sh
+docker run --rm -v "$PWD:/juge" -v juge-maven:/root/.m2 juge-maze-check sh -c '
+  mvn -B -ntp -N install &&
+  mvn -B -ntp -f runtool/pom.xml install &&
+  mvn -B -ntp -f benchmarktool/pom.xml package'
+docker run --rm --network none -v "$PWD:/juge" -v juge-maven:/root/.m2 \
+  -v /absolute/path/to/unpacked-maze:/opt/maze:ro -e MAZE_HOME=/opt/maze \
+  juge-maze-check sh maze_runtool/verify.sh --pipeline
+```
+
+This checks two target classes for each of six configurations: a shipped baseline,
+an external strategy, and an external heuristic in both modes. Each must produce
+compilable suites, positive coverage and mutation scores, and a separate transcript
+row for each class. A failing extension must never reach metrics or aggregation.
+Failed checks retain their working files under `maze_runtool/target/`.
+
+These development-image checks exercise the real runner and metric libraries.
+The full Linux x86-64 image has also been checked separately with the published
+MAZE v1.2.0 package: BFS symbolic, an external strategy, and BFS concrete ran over
+BinarySearch and TriangleClassifier with a five-second budget and one repetition.
+All six results produced compilable tests, positive coverage and mutation metrics,
+and R scoring outputs, including comparison reports and final rankings. This ran
+with two CPUs and 4 GiB of memory under emulation on Apple Silicon.
+
+That smoke test establishes the setup works; it does not validate the full corpus
+or provide a statistically meaningful comparison of strategies.
 
 ## Benchmarking other tools
 
@@ -146,7 +224,7 @@ The following changes were made to the JUGE framework to support the Maze tool:
 
 - Upgraded the ubuntu base image to `ubuntu:22.04` from `ubuntu:20.04`.
 - Added JDK 21 installation to the Dockerfile, as Maze targets Java 21 rather than Java 8.
-- Added Z3 installation to the Dockerfile, as Maze requires Z3.
+- Added Z3 installation to the Dockerfile, for the original MAZE setup; packaged MAZE now supplies its own native libraries.
 - Added a runtool implementation for Maze according to the format required by the JUGE framework.
 - Added a runtool implementation for Kex according to the format required by the JUGE framework.
 - Added a runtool implementation for T3 according to the format required by the JUGE framework.

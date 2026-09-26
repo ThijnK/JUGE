@@ -85,6 +85,10 @@ public class TranscriptWriter implements IToolListener {
         );
     }
 
+    private boolean isMaze() {
+        return toolName.equals("maze") || toolName.startsWith("maze-");
+    }
+
     @Override
     public void startClass(String cname) {
         time = System.currentTimeMillis();
@@ -110,6 +114,10 @@ public class TranscriptWriter implements IToolListener {
                 // write compute genTime and write it to file
                 genTime = System.currentTimeMillis() - time;
                 writeTimingFile(testcaseDir, genTime, prepTime);
+                if (isMaze()) {
+                    // Preserve each class before the runner clears its working test directory.
+                    Util.CopyToDirectory(testcaseDir, new File(testcaseDir.getParentFile(), "maze-tests"), cname);
+                }
 
                 if (Main.testCaseCopyDir != null) {
                     File archiveDir = new File(Main.testCaseCopyDir);
@@ -122,7 +130,16 @@ public class TranscriptWriter implements IToolListener {
 
             } else if (!generateTests && computeMetrics) {
                 // Use archive folder to read test cases
-                testcaseDir = new File(Main.testCaseCopyDir);
+                if (isMaze()) {
+                    File saved = new File(Main.testCaseCopyDir, cname);
+                    File workingParent = testcaseDir.getParentFile();
+                    String workingName = "maze-metrics-" + cname;
+                    // Metrics may rewrite tests; keep the generation evidence unchanged.
+                    Util.CopyToDirectory(saved, workingParent, workingName);
+                    testcaseDir = new File(workingParent, workingName);
+                } else {
+                    testcaseDir = new File(Main.testCaseCopyDir);
+                }
 
                 TimingData t = readTimingFile(testcaseDir);
                 this.prepTime = t.preparationTime;
@@ -201,6 +218,7 @@ public class TranscriptWriter implements IToolListener {
         } catch (Throwable e) {
             Main.info("ERROR: Something went wrong! Consult log.txt for more infos!");
             e.printStackTrace(Main.debugStr);
+            if (isMaze()) throw new IllegalStateException("MAZE benchmark processing failed for " + cname, e);
         }
 
     }

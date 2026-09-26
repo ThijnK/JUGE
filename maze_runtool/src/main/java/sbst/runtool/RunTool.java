@@ -37,11 +37,13 @@ public class RunTool {
                 channel.emit(file);
             }
         }
+        if (m == 0) tool.finish();
         channel.emit("READY");
+        long timeBudget = m > 0 ? channel.longnumber() : 0;
         for (int i = 0; i < m; i++) {
-            long timeBudget = channel.longnumber();
             String cName = channel.className();
             tool.run(cName, timeBudget);
+            if (i == m - 1) tool.finish();
             channel.emit("READY");
         }
     }

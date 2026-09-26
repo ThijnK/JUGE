@@ -1,13 +1,16 @@
-#!/bin/bash
-
-# Invoke maze's runtool, passing to it the following paramaters:
-#  arg0 : search strategy or strategies (separated by comma, no space!)
-#  arg1 : true/false whether or not suite minimalization is applied
-#  arg2 : the --path-length-cov option of MAZE, e.g. 3. Use 0 to disable.
-#  arg3 : the --target-path-aging option of MAZE
-
-#java -cp lib/maze_runtool-1.1.jar sbst.runtool.Main PCS true 3 0
-
-#java -cp lib/maze_runtool-1.1.jar sbst.runtool.Main SGS true 0 0
-
-java -cp lib/maze_runtool-1.1.jar sbst.runtool.Main FOS,COS true 0 0
+#!/bin/sh
+set -eu
+: "${MAZE_HOME:?Set MAZE_HOME to an unpacked MAZE Linux package}"
+: "${MAZE_EXPERIMENT:?Set MAZE_EXPERIMENT to a named experiment JSON file}"
+# JUGE's metrics JVM can remain Java 8; MAZE and this adapter use Java 21.
+if [ -n "${MAZE_JAVA_HOME:-}" ]; then
+    export JAVA_HOME="$MAZE_JAVA_HOME"
+fi
+if [ -n "${JAVA_HOME:-}" ]; then
+    java_command=$JAVA_HOME/bin/java
+else
+    java_command=java
+fi
+adapter_home=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+exec "$java_command" -cp "$adapter_home/lib/maze-adapter.jar:$MAZE_HOME/maze.jar" \
+    sbst.runtool.Main "$MAZE_HOME" "$MAZE_EXPERIMENT"
