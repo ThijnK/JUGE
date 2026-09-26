@@ -231,3 +231,17 @@ The following changes were made to the JUGE framework to support the Maze tool:
 - Other minor changes to fix issues with the framework or make things easier to use.
 
 The benchmark subjects were added in the `benchmarks_maze` directory, see the [README](/infrastructure/benchmarks_maze/README.md) in that directory for details. If you want to put in other subjects, keep in mind that they should be compiled in Java-8 so they can be instrumented by Jacoco for coverage measurement and targetted by PIT for mutation test. Possibly some higher version of Java would also work (to compile the subjects), I haven't checked. In general, keep in mind what the requirement of Jacoco, PIT, and the testing tools you use for comparison with regards to the needed Java version.
+
+## Coverage and mutation controls
+
+Benchmark runners can select coverage-only measurement or full mutation
+enumeration with these opt-in JVM properties:
+
+- `-Dsbst.benchmark.skipMutation=true` skips PIT for coverage-only runs. Mutation
+  fields in those transcripts are placeholders, not measured zero scores.
+- `-Dsbst.benchmark.allMutants=true` disables the legacy half/third sampling for
+  subjects with more than 200/400 mutants. PIT's default mutator set is unchanged.
+
+Both default to false, preserving existing commands. JUGE's effective mutation
+denominator still excludes ignored mutants; retain the generated and ignored
+counts from `mutation_results.txt` alongside the transcript denominator.

@@ -70,7 +70,9 @@ public class TestSuite {
         findFlakyTests();
         jacoco(cut);
         long time = System.currentTimeMillis();
-        mutationAnalysis(cut);
+        if (!Boolean.getBoolean("sbst.benchmark.skipMutation")) {
+            mutationAnalysis(cut);
+        }
         System.out.println("Time for mutation analysis = " + (System.currentTimeMillis() - time));
     }
 

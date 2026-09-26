@@ -93,12 +93,12 @@ public class PITWrapper {
             int count = 0;
             for (MutationDetails mutantDetail : list) {
                 count++;
-                if (list.size() > 400) {
+                if (!Boolean.getBoolean("sbst.benchmark.allMutants") && list.size() > 400) {
                     if ((count % 3) > 0) {
                         //Main.info("Mutation skipped " +mutantDetail.getId());
                         continue;
                     }
-                } else if (list.size() > 200) {
+                } else if (!Boolean.getBoolean("sbst.benchmark.allMutants") && list.size() > 200) {
                     if ((count % 2) == 0) {
                         //Main.info("Mutation skipped " +mutantDetail.getId());
                         continue;
