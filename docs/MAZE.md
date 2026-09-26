@@ -7,22 +7,35 @@ same path as shipped strategies; no launcher or Java source edits are necessary.
 
 ## Prepare the environment
 
-Use an unpacked [MAZE Linux package](https://github.com/ThijnK/maze/blob/main/docs/distributions.md)
-that includes the search-extension CLI and completion records (introduced in
-[MAZE PR #4](https://github.com/ThijnK/maze/pull/4)). The older MAZE JARs
-in `tools/maze/lib` are not used by this adapter.
+Use the published [MAZE v1.2.0 package](https://github.com/ThijnK/maze/releases/tag/v1.2.0).
+Download it separately; MAZE does not need to be copied into this repository or
+built from source.
 
 The full JUGE image currently targets Linux x86-64: it uses Java 8 for the legacy
 coverage/mutation tools and Java 21 for MAZE. On an Apple Silicon Mac, build and run
 it with `--platform linux/amd64`, and select MAZE's **amd64** archive. You do not
 need Java or Z3 installed on the host.
 
-From the JUGE checkout:
+From the JUGE checkout, download and verify the package in a sibling directory:
+
+```sh
+mkdir -p ../maze-packages
+(
+  cd ../maze-packages
+  curl --fail --location --remote-name https://github.com/ThijnK/maze/releases/download/v1.2.0/maze-1.2.0-linux-amd64.tar.gz
+  curl --fail --location --remote-name https://github.com/ThijnK/maze/releases/download/v1.2.0/maze-1.2.0-linux-amd64.tar.gz.sha256
+  shasum -a 256 -c maze-1.2.0-linux-amd64.tar.gz.sha256 &&
+    tar -xzf maze-1.2.0-linux-amd64.tar.gz
+)
+MAZE_PACKAGE="$(cd ../maze-packages/maze-1.2.0-linux-amd64 && pwd)"
+```
+
+Keep that directory for future runs. Build and start JUGE from the same shell:
 
 ```sh
 docker build --platform linux/amd64 -t juge-maze .
 docker run --rm -it --platform linux/amd64 --cpus=2 --memory=4g \
-  -v "$PWD:/juge" -v /absolute/path/to/unpacked-maze:/opt/maze:ro \
+  -v "$PWD:/juge" -v "$MAZE_PACKAGE:/opt/maze:ro" \
   -v /absolute/path/to/research:/research \
   -e MAZE_HOME=/opt/maze -w /juge juge-maze bash
 ```
@@ -152,7 +165,9 @@ docker run --rm --network none -v "$PWD:/juge" \
   juge-maze-check sh maze_runtool/verify.sh
 ```
 
-Select a package matching this container's architecture. The checks compile
+Select a package matching this container's architecture: on Apple Silicon, use
+the **arm64** release asset for this development image. The full image described
+earlier still requires **amd64**. The checks compile
 separate extensions, exercise built-in/strategy/heuristic/composed configurations
 in both modes, compile and run generated JUnit suites, and exercise multi-class
 protocol handling and rejection of failed/stale experiments.
@@ -176,8 +191,16 @@ compilable suites, positive coverage and mutation scores, and a separate transcr
 row for each class. A failing extension must never reach metrics or aggregation.
 Failed checks retain their working files under `maze_runtool/target/`.
 
-These checks exercise the real runner and metric libraries. They do not validate
-the full benchmark corpus, the legacy x86-64 image build, or R's statistical scoring.
+These development-image checks exercise the real runner and metric libraries.
+The full Linux x86-64 image has also been checked separately with the published
+MAZE v1.2.0 package: BFS symbolic, an external strategy, and BFS concrete ran over
+BinarySearch and TriangleClassifier with a five-second budget and one repetition.
+All six results produced compilable tests, positive coverage and mutation metrics,
+and R scoring outputs, including comparison reports and final rankings. This ran
+with two CPUs and 4 GiB of memory under emulation on Apple Silicon.
+
+That smoke test establishes the setup works; it does not validate the full corpus
+or provide a statistically meaningful comparison of strategies.
 
 ## Benchmarking other tools
 
