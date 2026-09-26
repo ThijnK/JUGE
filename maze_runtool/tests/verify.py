@@ -88,7 +88,7 @@ class AdapterCheck(unittest.TestCase):
         for mode in ("symbolic", "concrete"):
             for arguments in configurations:
                 with self.subTest(mode=mode, arguments=arguments):
-                    result = self.generate(mode, arguments + ["--minimization=true"])
+                    result = self.generate(mode, arguments + ["--minimization=true", "--seed=4294967295", "--max-replay-steps=10000"])
                     self.assertEqual(result.returncode, 0, result.stderr)
                     self.assertEqual(result.stdout.splitlines().count("READY"), 3)
                     batch = json.loads((self.work / "temp/maze-batch.json").read_text())
@@ -98,6 +98,9 @@ class AdapterCheck(unittest.TestCase):
                         status_path = self.work / "temp" / invocation["status"]
                         status = json.loads(status_path.read_text())
                         self.assertEqual(status["mode"], mode)
+                        self.assertEqual(status["seed"], 4294967295)
+                        self.assertEqual(status["candidateReplay"]["maxTraceEntries"], 10000)
+                        self.assertEqual(status["candidateReplay"]["maxSymbolicSteps"], 10000)
                         if "search.json" in arguments:
                             self.assertEqual(len(status["configuration"]), 3)
                         test_name = invocation["target"].split(".")[-1] + "Test"

@@ -7,7 +7,7 @@ same path as shipped strategies; no launcher or Java source edits are necessary.
 
 ## Prepare the environment
 
-Use the published [MAZE v1.2.0 package](https://github.com/ThijnK/maze/releases/tag/v1.2.0).
+Use the published [MAZE v1.2.1 package](https://github.com/ThijnK/maze/releases/tag/v1.2.1).
 Download it separately; MAZE does not need to be copied into this repository or
 built from source.
 
@@ -22,12 +22,12 @@ From the JUGE checkout, download and verify the package in a sibling directory:
 mkdir -p ../maze-packages
 (
   cd ../maze-packages
-  curl --fail --location --remote-name https://github.com/ThijnK/maze/releases/download/v1.2.0/maze-1.2.0-linux-amd64.tar.gz
-  curl --fail --location --remote-name https://github.com/ThijnK/maze/releases/download/v1.2.0/maze-1.2.0-linux-amd64.tar.gz.sha256
-  shasum -a 256 -c maze-1.2.0-linux-amd64.tar.gz.sha256 &&
-    tar -xzf maze-1.2.0-linux-amd64.tar.gz
+  curl --fail --location --remote-name https://github.com/ThijnK/maze/releases/download/v1.2.1/maze-1.2.1-linux-amd64.tar.gz
+  curl --fail --location --remote-name https://github.com/ThijnK/maze/releases/download/v1.2.1/maze-1.2.1-linux-amd64.tar.gz.sha256
+  shasum -a 256 -c maze-1.2.1-linux-amd64.tar.gz.sha256 &&
+    tar -xzf maze-1.2.1-linux-amd64.tar.gz
 )
-MAZE_PACKAGE="$(cd ../maze-packages/maze-1.2.0-linux-amd64 && pwd)"
+MAZE_PACKAGE="$(cd ../maze-packages/maze-1.2.1-linux-amd64 && pwd)"
 ```
 
 Keep that directory for future runs. Build and start JUGE from the same shell:
@@ -81,6 +81,13 @@ For a shipped baseline, use `"arguments": ["--strategy", "BFS", ...]` instead.
 Copy an experiment and set `"mode": "concrete"` to compare the other execution mode.
 Give different variants different names. Two example baseline files are supplied
 under `tools/maze/experiments/`.
+
+With MAZE 1.2.1, `arguments` also accepts `--seed=<long>` and
+`--max-replay-steps=<positive integer>` (default `10000`). Use different seeds for
+independent repetitions and matching seeds for paired comparisons. A seed in an
+experiment file is reused for every repetition of that file; JUGE does not vary
+it automatically. The batch's MAZE completion records retain the seed, replay
+limits and discarded-candidate counts.
 
 JUGE supplies the classpath, target class, output directory, time budget, mode,
 JUnit 4 format, and summary export. Those settings, their short aliases, help,
@@ -192,6 +199,12 @@ row for each class. A failing extension must never reach metrics or aggregation.
 Failed checks retain their working files under `maze_runtool/target/`.
 
 These development-image checks exercise the real runner and metric libraries.
+MAZE v1.2.1 passed the adapter checks and all six pipeline configurations on
+Linux ARM64, including seed/replay-option receipts, generated-suite execution,
+coverage, mutation analysis and exclusion of a failing extension. Separate Linux
+x86-64 checks verified full enumeration of 501 mutants (versus the legacy sample
+of 167) and rejection of a tool that exits before READY after writing partial tests.
+
 The full Linux x86-64 image has also been checked separately with the published
 MAZE v1.2.0 package: BFS symbolic, an external strategy, and BFS concrete ran over
 BinarySearch and TriangleClassifier with a five-second budget and one repetition.
@@ -245,3 +258,7 @@ enumeration with these opt-in JVM properties:
 Both default to false, preserving existing commands. JUGE's effective mutation
 denominator still excludes ignored mutants; retain the generated and ignored
 counts from `mutation_results.txt` alongside the transcript denominator.
+
+JUGE also propagates a tool's failure to send READY as an I/O error, rather
+than continuing into a successful generation transcript after a protocol error.
+The token-wait executor is cancelled and shut down on all exit paths.
