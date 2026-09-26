@@ -184,12 +184,14 @@ public class RunTool {
 
         try {
             future.get(timeout_millis, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException | ExecutionException e) {
-            Main.debug("Error: \n" + e.getCause());
-            for (StackTraceElement trace : e.getStackTrace()) {
-                Main.debug("" + trace);
-            }
-            e.printStackTrace();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Interrupted waiting for " + string, e);
+        } catch (ExecutionException e) {
+            throw new IOException("Tool failed before sending " + string, e.getCause());
+        } finally {
+            future.cancel(true);
+            executor.shutdownNow();
         }
     }
 
