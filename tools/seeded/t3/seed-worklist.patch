@@ -1,5 +1,0 @@
---- a/src/main/java/Sequenic/T3/DerivativeSuiteGens/Gen2/Worklist.java
-+++ b/src/main/java/Sequenic/T3/DerivativeSuiteGens/Gen2/Worklist.java
-@@ -39 +39 @@
--	protected Random rnd = new Random() ;
-+	protected Random rnd = new Random(Long.parseLong(System.getProperty("juge.seed"))) ;

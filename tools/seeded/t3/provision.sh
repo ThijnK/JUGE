@@ -15,7 +15,6 @@ if hashlib.sha256(pathlib.Path(sys.argv[1]).read_bytes()).hexdigest() != 'b8bbd2
     raise SystemExit('T3 source checksum mismatch')
 PY
 tar -xzf "$build/source.tar.gz" -C "$build/source" --strip-components=1
-patch -d "$build/source" -p1 < "$adapter_dir/seed-worklist.patch"
 docker run --platform linux/amd64 --rm --cpus=2 --memory=2g \
     -v "$build/source:/source" -v "$out:/output" -v "$adapter_dir:/adapter:ro" \
     -v maze-ast2027-maven:/root/.m2 -w /source "$image" sh -c '
@@ -24,6 +23,5 @@ docker run --platform linux/amd64 --rm --cpus=2 --memory=2g \
     /opt/java8/bin/javac -cp "/output/lib/*" -d /output/classes /adapter/SeededT3.java'
 cp "$adapter_dir/runtool" "$out/runtool"
 cp "$adapter_dir/../generation.py" "$out/generation.py"
-cp "$adapter_dir/seed-worklist.patch" "$out/seed-worklist.patch"
 chmod +x "$out/runtool"
-printf '%s\n' '3.0.1-SNAPSHOT-a12cf1a3-java8-seeded' > "$out/VERSION.txt"
+printf '%s\n' '3.0.1-SNAPSHOT-a12cf1a3-java8-api-seeded' > "$out/VERSION.txt"

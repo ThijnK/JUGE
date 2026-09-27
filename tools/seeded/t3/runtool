@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 HOME = Path(__file__).resolve().parent
-VERSION = '3.0.1-SNAPSHOT-a12cf1a3-java8-seeded'
+VERSION = '3.0.1-SNAPSHOT-a12cf1a3-java8-api-seeded'
 
 
 def line():

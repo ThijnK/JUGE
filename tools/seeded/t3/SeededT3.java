@@ -10,8 +10,7 @@ public final class SeededT3 {
         long seed = Long.parseLong(args[0]);
         long budgetMillis = Long.parseLong(args[1]);
         T3Random.getRnd().setSeed(seed);
-        // Worklist also owns an RNG: the pinned compatibility patch reads this property.
-        System.setProperty("juge.seed", Long.toString(seed));
+        // Upstream Worklist keeps its separate, unseeded RNG.
         Files.createDirectories(Paths.get("trdir"));
         Files.createDirectories(Paths.get("temp/testcases"));
         G2Config config = new G2Config();

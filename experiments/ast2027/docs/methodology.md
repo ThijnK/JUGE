@@ -19,6 +19,10 @@ They do not guarantee termination of arbitrary subject/library execution.
   and tools. Run order is fixed, repetition-major, not randomized. Host load,
   emulation and thermal drift can affect time-limited search. Record interruptions
   and relevant host changes. Seeds do not guarantee identical generated suites.
+- T3 is built from unmodified upstream source. Its existing T3Random API receives
+  the scheduled seed, but Worklist's separate random generator remains unseeded.
+  T3 repetitions therefore include uncontrolled Worklist randomness; the recorded
+  seed is insufficient to replay all random choices, even on the same machine.
 - All tools use Linux AMD64 because Kex's native solver requires it; this is
   emulated on ARM hosts. Each row gets two CPUs and 4 GiB; MAZE's heap is 2500 MiB
   and JUGE's is 1500 MiB. Other tool/executor heap settings are in their wrappers.

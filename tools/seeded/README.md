@@ -20,9 +20,11 @@ Use the generated tool directories with JUGE; source templates alone lack binari
   Exact overrides are retained in `temp/kex.ini` and `kex-command.json`.
 - **T3:** [author source](https://git.science.uu.nl/prase101/t3), pinned revision
   `a12cf1a3b1b7149566cf6dbb80e43eabdbb70041`, archive SHA-256 checked. Built for
-  Java 8. `SeededT3.java` calls Gen2 directly, avoiding the upstream SBST entry
-  point's unconditional failure exit. The committed patch seeds Worklist's RNG
-  as well as T3Random. Gen2 receives budget minus two seconds (minimum one),
+  Java 8 from unmodified upstream source. `SeededT3.java` calls Gen2 directly,
+  avoiding the upstream SBST entry point's unconditional failure exit, and seeds
+  T3Random through its existing API. Worklist retains its separate unseeded RNG:
+  the recorded seed does not control all T3 randomness, so repeated invocations
+  with the same seed may differ. Gen2 receives budget minus two seconds (minimum one),
   with the wrapper deadline at budget + 5. Settings include coverage guidance,
   regression oracles and private/default members; all are visible in the wrapper.
   Traces are retained for replay. Upstream generated JUnit can silently return

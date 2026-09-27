@@ -13,8 +13,8 @@ def definitions(root):
     return {
         'EvoSuite': dict(directory=str(root / 'evosuite'), version='1.2.0', seed_env='JUGE_TOOL_SEED',
                         configuration='DYNAMOSA; real -seed; Java8; phase budgets follow JUGE adapter; see frozen runtool'),
-        'T3': dict(directory=str(root / 't3'), version='3.0.1-SNAPSHOT-a12cf1a3-java8-seeded', seed_env='JUGE_TOOL_SEED',
-                   configuration='Gen2 SBST settings; T3Random and Worklist RNG seeded; Java8 compatibility build; see SeededT3.java and patch'),
+        'T3': dict(directory=str(root / 't3'), version='3.0.1-SNAPSHOT-a12cf1a3-java8-api-seeded', seed_env='JUGE_TOOL_SEED',
+                   configuration='Gen2 SBST settings; unmodified upstream source built for Java8; T3Random seeded through existing API; Worklist RNG unseeded; see SeededT3.java'),
         'Kex': dict(directory=str(root / 'kex'), version='0.0.11', seed_env='JUGE_TOOL_SEED',
                     configuration='concolic; easy-random.seed=scheduled seed; ksmt.seed=seed & 0x7fffffff; timeLimit=requested seconds; one executor and worker; Linux AMD64 Java8')}
 
