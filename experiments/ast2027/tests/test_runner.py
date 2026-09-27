@@ -128,6 +128,33 @@ class MatrixTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 bench.verify_environment(root, {'environment': {}, 'suite': {}})
 
+    def test_cli_has_no_default_deadline_and_honors_stop(self):
+        for options, expected_runs in [([], 2), (['--hours', '1'], 1)]:
+            with self.subTest(options=options), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                rows = matrix()[:3]
+                spec = dict(purpose='production', environment={}, suite={}, runs=rows)
+                spec['id'] = identity(spec)
+                atomic(root / 'manifest.json', spec)
+                atomic(root / 'preflight.json', dict(environment_id=identity({})))
+                elapsed = [0]
+                executed = []
+
+                def execute(root, spec, row, timeout, control_root):
+                    executed.append(row['id'])
+                    elapsed[0] += 9 * 3600
+                    if len(executed) == 2:
+                        (root / 'STOP').touch()
+                    return dict(status='ok', reason=None)
+
+                argv = ['bench.py', 'run', '--results', str(root), *options]
+                with patch.object(sys, 'argv', argv), \
+                        patch.object(bench.time, 'monotonic', side_effect=lambda: elapsed[0]), \
+                        patch.object(bench, 'execute', side_effect=execute), \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(bench.main(), 0)
+                self.assertEqual(executed, [r['id'] for r in rows[:expected_runs]])
+
 
 if __name__ == '__main__':
     unittest.main()

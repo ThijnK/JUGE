@@ -252,7 +252,7 @@ def run(args, root, spec):
         remove_container(active['container'])
         atomic(root / 'incomplete' / (active['id'] + '.json'), dict(**active, reason='unclean_previous_exit'))
         (root / 'active.json').unlink()
-    stop_at = time.monotonic() + args.hours * 3600
+    stop_at = time.monotonic() + args.hours * 3600 if args.hours is not None else float('inf')
     completed = failures = 0
     for row in rows:
         if (root / 'STOP').exists() or (control_root / 'STOP').exists() or time.monotonic() >= stop_at or completed >= args.max_runs:
@@ -301,7 +301,7 @@ def main():
     p.add_argument('--b-repetitions', type=int, choices=[5, 10], default=10)
     p.add_argument('--purpose', choices=['smoke', 'production'], default='production')
     p.add_argument('--experiment', choices=['A', 'B'], default='A')
-    p.add_argument('--hours', type=float, default=8)
+    p.add_argument('--hours', type=float, help='Optional session limit in hours; no time limit by default')
     p.add_argument('--max-runs', type=int, default=100000)
     p.add_argument('--min-free-gb', type=float, default=5)
     p.add_argument('--retry-excluded', action='store_true')

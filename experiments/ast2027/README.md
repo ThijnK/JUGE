@@ -55,7 +55,7 @@ with the paper dataset.
 ## Run, inspect and resume
 
 ```sh
-python3 "$RUNNER" run --results "$RESULTS" --experiment A --hours 8
+python3 "$RUNNER" run --results "$RESULTS" --experiment A
 python3 "$RUNNER" status --results "$RESULTS"
 python3 "$RUNNER" analyze --results "$RESULTS"
 ```
@@ -65,14 +65,16 @@ Once all A outcomes are scoreable, analysis writes `selection.json`: the treatme
 with the highest unweighted mean of subject means at 60 seconds. Then run B:
 
 ```sh
-python3 "$RUNNER" run --results "$RESULTS" --experiment B --hours 8
+python3 "$RUNNER" run --results "$RESULTS" --experiment B
 python3 "$RUNNER" analyze --results "$RESULTS"
 ```
 
 B has 800 runs (20 subjects × four tools × ten repetitions at 60 seconds). Five
 repetitions can be selected with `prepare --b-repetitions 5` before freezing.
-Expect multiple sessions: a full matrix is substantially longer than one night.
-`--hours` limits starting further rows; the current row can finish after that limit.
+A full matrix can take longer than one night. There is no session time limit by
+default: each command continues until its phase is complete, a stop is requested,
+or an operational guard stops it. An optional `--hours` limit stops starting
+further rows after that duration; the current row can finish after the limit.
 
 `status` returns measured, timeout, empty, unresolved/excluded and pending counts,
 completed repetitions, the active run and stop state. `progress.log` records run
@@ -80,10 +82,11 @@ starts/completions and interventions. Poll `status` for monitoring.
 
 ```sh
 python3 "$RUNNER" stop --results "$RESULTS"
-python3 "$RUNNER" resume --results "$RESULTS" --experiment A --hours 8
+python3 "$RUNNER" resume --results "$RESULTS" --experiment A
 ```
 
-Stop terminates the active container and retains its incomplete attempt. Resume
+Stop preserves completed results, terminates the active container and retains its
+incomplete attempt. Resume
 retries incomplete/missing/unverifiable rows and skips verified terminal outcomes.
 A lock prevents overlapping writers. Low disk space (default 5 GiB) or three
 consecutive unresolved failures stop further runs. Investigate before restarting.
