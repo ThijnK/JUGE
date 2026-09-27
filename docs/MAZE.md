@@ -5,9 +5,16 @@ analysis. MAZE remains a separate package: this repository's adapter launches it
 with a named experiment configuration. External strategies and heuristics use the
 same path as shipped strategies; no launcher or Java source edits are necessary.
 
+For the AST2027 study, use the [experiment runner](../experiments/ast2027/README.md).
+It provides pinned setup, preflight, run/status/resume, failure-inclusive analysis
+and saved raw evidence. The commands below remain the general MAZE integration.
+
+MAZE 1.2.2 additionally applies the run deadline to Z3 checks, retaining completed
+tests when solving reaches that deadline.
+
 ## Prepare the environment
 
-Use the published [MAZE v1.2.1 package](https://github.com/ThijnK/maze/releases/tag/v1.2.1).
+Use the published [MAZE v1.2.2 package](https://github.com/ThijnK/maze/releases/tag/v1.2.2).
 Download it separately; MAZE does not need to be copied into this repository or
 built from source.
 
@@ -22,12 +29,12 @@ From the JUGE checkout, download and verify the package in a sibling directory:
 mkdir -p ../maze-packages
 (
   cd ../maze-packages
-  curl --fail --location --remote-name https://github.com/ThijnK/maze/releases/download/v1.2.1/maze-1.2.1-linux-amd64.tar.gz
-  curl --fail --location --remote-name https://github.com/ThijnK/maze/releases/download/v1.2.1/maze-1.2.1-linux-amd64.tar.gz.sha256
-  shasum -a 256 -c maze-1.2.1-linux-amd64.tar.gz.sha256 &&
-    tar -xzf maze-1.2.1-linux-amd64.tar.gz
+  curl --fail --location --remote-name https://github.com/ThijnK/maze/releases/download/v1.2.2/maze-1.2.2-linux-amd64.tar.gz
+  curl --fail --location --remote-name https://github.com/ThijnK/maze/releases/download/v1.2.2/maze-1.2.2-linux-amd64.tar.gz.sha256
+  shasum -a 256 -c maze-1.2.2-linux-amd64.tar.gz.sha256 &&
+    tar -xzf maze-1.2.2-linux-amd64.tar.gz
 )
-MAZE_PACKAGE="$(cd ../maze-packages/maze-1.2.1-linux-amd64 && pwd)"
+MAZE_PACKAGE="$(cd ../maze-packages/maze-1.2.2-linux-amd64 && pwd)"
 ```
 
 Keep that directory for future runs. Build and start JUGE from the same shell:

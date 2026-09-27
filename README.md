@@ -1,12 +1,22 @@
-# JUGE-MAZE BMF (Benchmarking Framework)
+# JUGE for MAZE
 
-This project contains the benchmarking framework to benchmark [MAZE](https://github.com/ThijnK/maze) and its search strategies. MAZE is an automated unit test generator for Java. You can use this framework to compare the performance of the strategies to each other and to other Java test generators.
+This fork of [JUGE](https://github.com/JUnitContest/JUGE) benchmarks
+[MAZE](https://github.com/ThijnK/maze) and other Java test generators using coverage,
+mutation analysis and repeated experiments.
 
-The BM Framework is an instance of the [JUGE framework](https://github.com/JUnitContest/JUGE) for benchmarking Java unit testing tools (this project is forked from [JUGE repository](https://github.com/JUnitContest/JUGE), customized to benchmark [MAZE](https://github.com/ThijnK/maze)
+- **[AST2027 experiments](experiments/ast2027/README.md):** reproduce the current
+  study, inspect progress, resume runs and regenerate statistics from saved data.
+- **[MAZE integration](docs/MAZE.md):** run packaged MAZE with built-in or external
+  search strategies and your own benchmark configurations.
+- **[Seeded tool provisioning](tools/seeded/README.md):** pinned EvoSuite, Kex and
+  T3 deployments used by the current experiments.
+- **[Historical results](https://github.com/ThijnK/JUGE/releases):** 2025 thesis/paper
+  and 2026 experiment archives, including study-specific analysis scripts.
 
-## JUGE-MAZE BMF README
-
-To read more about JUGE-MAZE BMF see [docs/MAZE.md](docs/MAZE.md).
+MAZE is downloaded as a separate packaged release. AST2027 requires Docker and
+Python on the host; a MAZE source checkout is unnecessary. Experiment outputs are
+saved outside version-controlled sources and can be distributed as release assets.
+Personal scheduling and notification instructions belong in ignored `local/`.
 
 ## Original JUGE README
 
