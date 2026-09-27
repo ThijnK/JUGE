@@ -1,7 +1,9 @@
 # Provisioned seeded tool adapters
 
 `python3 tools/seeded/provision.py --output /absolute/fresh/directory` produces
-self-contained JUGE protocol tool directories and a `tools.json` inventory.
+self-contained tool directories and a `tools.json` inventory for single-target
+JUGE invocations, as used by the experiment runner. Kex explicitly rejects batches
+with multiple targets; use one isolated invocation per class.
 Legacy `tools/<tool>/runtool` deployments remain available for historical workflows.
 The new adapters share `generation.py` for invocation evidence, deadlines and
 process-group cleanup, and read a required unsigned 32-bit `JUGE_TOOL_SEED`.
@@ -34,3 +36,5 @@ successful generated suite. JUGE/experiment code decides how outcomes are scored
 Provisioning builds the small Java 8/21/Python image in
 `experiments/ast2027/Dockerfile`; that is the supplied runtime, not a dependency on
 MAZE source. Downloads and build outputs stay outside tracked source directories.
+
+Adapter process checks: `python3 -m unittest discover -s tools/seeded/tests -v`.

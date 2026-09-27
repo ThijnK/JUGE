@@ -212,6 +212,11 @@ coverage, mutation analysis and exclusion of a failing extension. Separate Linux
 x86-64 checks verified full enumeration of 501 mutants (versus the legacy sample
 of 167) and rejection of a tool that exits before READY after writing partial tests.
 
+On 2026-09-27, the AST2027 workflow using MAZE 1.2.2 passed all 34 A and 16 B
+preflight runs under Linux AMD64 emulation, including real JaCoCo/PIT measurement
+for MAZE, T3, EvoSuite and Kex. Real interruption/resume and statistics export
+checks also passed. These are setup validation, not paper observations.
+
 The full Linux x86-64 image has also been checked separately with the published
 MAZE v1.2.0 package: BFS symbolic, an external strategy, and BFS concrete ran over
 BinarySearch and TriangleClassifier with a five-second budget and one repetition.
@@ -229,12 +234,12 @@ As already mentioned, you can run benchmarks for other tools by changing the vol
 
 Specific note for Kex: while the `run_benchmarks.sh` script accepts a time budget as an argument, the Kex tool itself requires the time budget to be set in the [`kex.ini`](/tools/kex/lib/kex-0.0.11/kex.ini) file (the `timeLimit` property in the concolic section, on line 110), so make sure to update that file with the time budget you want to use before running the benchmarks.
 
-**What if I want to add other tools?** Other tools can be benchmarked by implementing JUGE runtool-protocol. See JUGE; see JUGE [./README.md](docs/USERGUIDE.md) for the user guide and [./DEVELOPERS.md](docs/CONTRIBUTORGUIDE.md) for the contributor guide.
+**What if I want to add other tools?** Other tools can be benchmarked by implementing JUGE runtool-protocol. See JUGE; see JUGE [user guide](USERGUIDE.md) for the user guide and [contributor guide](CONTRIBUTORGUIDE.md) for the contributor guide.
 
 ## Extending or changing the benchmark set
 
 The target classes that form the benchmark subjects are placed in the `/var/benchmarks` directory of the container. These are copied from the benchmark subjects in [`benchmarks_maze`](/infrastructure/benchmarks_maze/README.md) directory. If you wish add more subjects, you can add them (Java source and compiled class files) to the zip there. If you want to use a completely new benchmark set, you can create and zip it in the structure similar to the zip in `benchmarks_maze`.
-Edit the [Dockerfile](Dockerfile) to copy the new zip to the `/var/benchmarks` directory in the container (you may also need to edit the [.dockerignore](.dockerignore) file to avoid excluding the folder with your benchmarks).
+Edit the [Dockerfile](../Dockerfile) to copy the new zip to the `/var/benchmarks` directory in the container (you may also need to edit the [.dockerignore](../.dockerignore) file to avoid excluding the folder with your benchmarks).
 
 **IMPORTANT:** keep in mind that subjects should be compiled in Java-8 so they can be instrumented by Jacoco for coverage measurement and targetted by PIT for mutation test.
 

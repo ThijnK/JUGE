@@ -28,9 +28,9 @@ For information about the past editions of the JUnit Competition, see [https://j
 
 ## Documentation
 
-See [docs/README.md](docs/USERGUIDE.md) for the user guide and [docs/DEVELOPERS.md](docs/CONTRIBUTORGUIDE.md) for the contributor guide.
+See [user guide](docs/USERGUIDE.md) for the user guide and [contributor guide](docs/CONTRIBUTORGUIDE.md) for the contributor guide.
 
-More information about the infrastructure and how it can be used to set up an empirical evaluation for unit test generators can be found in [Devroey, X., Gambi, A., Galeotti, J. P., Just, R., Kifetew, F., Panichella, A., Panichella, S. (2021). JUGE: An Infrastructure for Benchmarking Java Unit Test Generators. Softw. Test. Verification Reliab. 33(3) (2023)](<[https://arxiv.org/abs/2106.07520](https://onlinelibrary.wiley.com/doi/full/10.1002/stvr.1838)>)
+More information about the infrastructure and how it can be used to set up an empirical evaluation for unit test generators can be found in [Devroey, X., Gambi, A., Galeotti, J. P., Just, R., Kifetew, F., Panichella, A., Panichella, S. (2021). JUGE: An Infrastructure for Benchmarking Java Unit Test Generators. Softw. Test. Verification Reliab. 33(3) (2023)](https://onlinelibrary.wiley.com/doi/full/10.1002/stvr.1838)
 
 ## Referencing JUGE
 
