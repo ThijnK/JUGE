@@ -1,0 +1,22 @@
+{
+  "AckermannPeter": ["recursion", "integers"],
+  "BinarySearch": ["arrays", "search", "loops"],
+  "BinaryTree": ["objects", "trees", "recursion"],
+  "BitwiseManipulator": ["bitwise", "integers"],
+  "BracketBalancer": ["character-arrays", "loops"],
+  "ConnectedComponents": ["graphs", "2D-arrays", "recursion"],
+  "ConvergingPaths": ["branching", "path-convergence"],
+  "Dijkstra": ["graphs", "2D-arrays", "loops"],
+  "ExprEvaluator": ["parsing", "recursion", "character-arrays"],
+  "FloatStatistics": ["floating-point", "arrays", "arithmetic"],
+  "GraphTraversal": ["graphs", "recursion", "2D-arrays"],
+  "HeapSort": ["sorting", "floating-point", "arrays"],
+  "IntUtils": ["integers", "arithmetic"],
+  "MatrixAnalyzer": ["2D-arrays", "nested-loops"],
+  "NestedLoops": ["nested-loops", "arrays", "sorting"],
+  "QuickSort": ["sorting", "recursion", "arrays"],
+  "SinglyLinkedList": ["objects", "linked-structures"],
+  "StringPatternMatcher": ["strings", "pattern-matching"],
+  "StringUtils": ["strings", "loops"],
+  "TriangleClassifier": ["branching", "floating-point", "integers"]
+}

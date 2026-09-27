@@ -34,3 +34,9 @@ results*/
 __pycache__/
 
 /tools/maze/lib/maze-adapter.jar
+
+# Local benchmark environments and personal operator notes
+/local/
+/results/
+__pycache__/
+*.pyc
