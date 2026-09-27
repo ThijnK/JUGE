@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+"""Seeded EvoSuite 1.2.0 DynaMOSA adapter for the JUGE line protocol."""
+import generation
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+HOME = Path(__file__).resolve().parent
+VERSION = '1.2.0'
+
+
+def line():
+    value = sys.stdin.readline()
+    if not value:
+        raise EOFError('Unexpected end of JUGE protocol')
+    return value.strip()
+
+
+def main():
+    if line() != 'BENCHMARK':
+        raise ValueError('Expected BENCHMARK')
+    source, classes = line(), line()
+    dependencies = [line() for _ in range(int(line()))]
+    count = int(line())
+    runtime = HOME / 'lib/evosuite-standalone-runtime-1.2.0.jar'
+    print('CLASSPATH\n1\n' + str(runtime) + '\nREADY', flush=True)
+    for _ in range(count):
+        budget, target = int(line()), line()
+        seed = int(os.environ['JUGE_TOOL_SEED'])
+        output = Path('temp/testcases')
+        output.mkdir(parents=True, exist_ok=True)
+        search = (budget + 1) // 2
+        init, assertions, checks = [budget // 2 // 3] * 3
+        remainder = budget // 2 % 3
+        assertions += remainder > 0
+        init += remainder > 1
+        command = ['/opt/java8/bin/java', '-Xmx1500m', '-jar', str(HOME / 'lib/evosuite-1.2.0.jar'),
+                   '-class', target, '-projectCP', os.pathsep.join([classes] + dependencies),
+                   '-seed', str(seed), '-Dalgorithm=DYNAMOSA', '-Dstopping_condition=MAXTIME',
+                   '-Dsearch_budget=' + str(search), '-Dinitialization_timeout=' + str(init),
+                   '-Dassertion_timeout=' + str(assertions), '-Djunit_check_timeout=' + str(checks),
+                   '-Dwrite_junit_timeout=' + str(budget), '-Dreuse_leftover_time=true',
+                   '-Dtest_dir=' + str(output), '-Dminimize=false', '-Dinline=false',
+                   '-Dcoverage=false', '-Dassertion_strategy=all', '-Dshow_progress=false',
+                   '-Dsandbox=false', '-Dsandbox_mode=OFF', '-Dtest_comments=false',
+                   '-Dstatistics_backend=NONE', '-Dnew_statistics=false']
+        Path('tool-command.json').write_text(json.dumps(command, indent=2) + '\n')
+        with Path('tool.log').open('w') as log:
+            generation.run(command, tool='EvoSuite', version=VERSION, seed=seed, target=target,
+                           budget=budget, stdout=log, timeout=budget + 5,
+                           env={**os.environ, 'JAVA_HOME': '/opt/java8', 'PATH': '/opt/java8/bin:' + os.environ['PATH']})
+        log_text = Path('tool.log').read_text(errors='replace')
+        if '* Done!' not in log_text or '* Using seed ' + str(seed) not in log_text:
+            raise RuntimeError('EvoSuite did not attest completed seeded generation')
+        if 'Error when generating tests for:' in log_text or 'OutOfMemoryError' in log_text:
+            raise RuntimeError('EvoSuite reported a generator failure')
+        Path('seed.json').write_text(json.dumps({'seed': seed, 'tool': 'EvoSuite', 'version': VERSION}) + '\n')
+        print('READY', flush=True)
+
+
+if __name__ == '__main__':
+    main()

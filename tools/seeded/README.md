@@ -1,0 +1,36 @@
+# Provisioned seeded tool adapters
+
+`python3 tools/seeded/provision.py --output /absolute/fresh/directory` produces
+self-contained JUGE protocol tool directories and a `tools.json` inventory.
+Legacy `tools/<tool>/runtool` deployments remain available for historical workflows.
+The new adapters share `generation.py` for invocation evidence, deadlines and
+process-group cleanup, and read a required unsigned 32-bit `JUGE_TOOL_SEED`.
+Use the generated tool directories with JUGE; source templates alone lack binaries.
+
+- **EvoSuite 1.2.0:** official release JARs, SHA-256 checked; DynaMOSA, `-seed`,
+  Java 8. Half the budget is search; the other half is divided across setup,
+  assertions and checks. Minimization/inlining are disabled. The complete command
+  is retained in `tool-command.json`. Adapter deadline: budget + 5 seconds.
+- **Kex 0.0.11:** official distribution, SHA-256 checked; concolic, one executor
+  and worker, scheduled easy-random seed and SMT seed masked to 31 bits. Native
+  solvers require Linux AMD64. Internal timeLimit is the requested budget;
+  adapter deadline adds 45 seconds, while JUGE may enforce an earlier cutoff.
+  Exact overrides are retained in `temp/kex.ini` and `kex-command.json`.
+- **T3:** [author source](https://git.science.uu.nl/prase101/t3), pinned revision
+  `a12cf1a3b1b7149566cf6dbb80e43eabdbb70041`, archive SHA-256 checked. Built for
+  Java 8. `SeededT3.java` calls Gen2 directly, avoiding the upstream SBST entry
+  point's unconditional failure exit. The committed patch seeds Worklist's RNG
+  as well as T3Random. Gen2 receives budget minus two seconds (minimum one),
+  with the wrapper deadline at budget + 5. Settings include coverage guidance,
+  regression oracles and private/default members; all are visible in the wrapper.
+  Traces are retained for replay. Upstream generated JUnit can silently return
+  after a ten-second execution wait; this limitation affects interpretation.
+
+These adapters report READY only after normal seeded generation, including valid
+empty output. `invocation.json` records tool/version/target/seed/budget after the
+process starts; `timeout.json` records an adapter deadline. Neither claims a
+successful generated suite. JUGE/experiment code decides how outcomes are scored.
+
+Provisioning builds the small Java 8/21/Python image in
+`experiments/ast2027/Dockerfile`; that is the supplied runtime, not a dependency on
+MAZE source. Downloads and build outputs stay outside tracked source directories.

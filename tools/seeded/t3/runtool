@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+"""Seeded T3 Gen2 adapter. Traces are preserved in trdir for metrics replay."""
+import generation
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+HOME = Path(__file__).resolve().parent
+VERSION = '3.0.1-SNAPSHOT-a12cf1a3-java8-seeded'
+
+
+def line():
+    value = sys.stdin.readline()
+    if not value:
+        raise EOFError('Unexpected end of JUGE protocol')
+    return value.strip()
+
+
+def main():
+    if line() != 'BENCHMARK':
+        raise ValueError('Expected BENCHMARK')
+    source, classes = line(), line()
+    dependencies = [line() for _ in range(int(line()))]
+    count = int(line())
+    jars = sorted((HOME / 'lib').glob('*.jar'))
+    if not jars:
+        raise FileNotFoundError('T3 libraries missing')
+    print('CLASSPATH\n' + str(len(jars)) + '\n' + '\n'.join(map(str, jars)) + '\nREADY', flush=True)
+    for _ in range(count):
+        budget, target = int(line()), line()
+        seed = int(os.environ['JUGE_TOOL_SEED'])
+        command = ['/opt/java8/bin/java', '-Xmx1500m', '-cp',
+                   os.pathsep.join([str(HOME / 'classes')] + list(map(str, jars)) + [classes] + dependencies),
+                   'SeededT3', str(seed), str(max(1, budget - 2) * 1000), target, classes]
+        Path('tool-command.json').write_text(json.dumps(command, indent=2) + '\n')
+        with Path('tool.log').open('w') as log:
+            generation.run(command, tool='T3', version=VERSION, seed=seed, target=target,
+                           budget=budget, stdout=log, timeout=budget + 5)
+        Path('seed.json').write_text(json.dumps({'seed': seed, 'tool': 'T3', 'version': VERSION}) + '\n')
+        print('READY', flush=True)
+
+
+if __name__ == '__main__':
+    main()

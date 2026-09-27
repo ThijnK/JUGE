@@ -1,0 +1,29 @@
+#!/bin/sh
+# Build the pinned author source in the existing benchmark image. Downloads stay
+# outside the repository's tracked files; the final runner has no network needs.
+set -eu
+adapter_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+out=${1:?Usage: provision.sh /absolute/output-directory}
+case "$out" in /*) ;; *) echo 'Output path must be absolute' >&2; exit 2 ;; esac
+image=${AST2027_BUILD_IMAGE:-maze-ast2027:amd64}
+build="$out.build"
+mkdir -p "$out/lib" "$out/classes" "$build/source"
+curl -fL --retry 3 'https://git.science.uu.nl/api/v4/projects/prase101%2Ft3/repository/archive.tar.gz?sha=a12cf1a3b1b7149566cf6dbb80e43eabdbb70041' -o "$build/source.tar.gz"
+python3 - "$build/source.tar.gz" <<'PY'
+import hashlib, pathlib, sys
+if hashlib.sha256(pathlib.Path(sys.argv[1]).read_bytes()).hexdigest() != 'b8bbd2ff84124933cfc2decb51449de7b7ac7c3c040c509d44fece965c2b226e':
+    raise SystemExit('T3 source checksum mismatch')
+PY
+tar -xzf "$build/source.tar.gz" -C "$build/source" --strip-components=1
+patch -d "$build/source" -p1 < "$adapter_dir/seed-worklist.patch"
+docker run --platform linux/amd64 --rm --cpus=2 --memory=2g \
+    -v "$build/source:/source" -v "$out:/output" -v "$adapter_dir:/adapter:ro" \
+    -v maze-ast2027-maven:/root/.m2 -w /source "$image" sh -c '
+    mvn -B -ntp -DskipTests -Dmaven.compiler.release=8 -Dmaven.compiler.source=1.8 -Dmaven.compiler.target=1.8 clean package dependency:copy-dependencies -DoutputDirectory=target/lib &&
+    cp target/t3-3.0.1-SNAPSHOT.jar target/lib/*.jar /output/lib/ &&
+    /opt/java8/bin/javac -cp "/output/lib/*" -d /output/classes /adapter/SeededT3.java'
+cp "$adapter_dir/runtool" "$out/runtool"
+cp "$adapter_dir/../generation.py" "$out/generation.py"
+cp "$adapter_dir/seed-worklist.patch" "$out/seed-worklist.patch"
+chmod +x "$out/runtool"
+printf '%s\n' '3.0.1-SNAPSHOT-a12cf1a3-java8-seeded' > "$out/VERSION.txt"

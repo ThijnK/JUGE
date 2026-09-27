@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+"""Seeded, bounded Kex 0.0.11 adapter for the JUGE line protocol."""
+import generation
+import json
+import os
+from pathlib import Path
+import platform
+import re
+import signal
+import subprocess
+import sys
+
+VERSION = '0.0.11'
+HOME = Path(__file__).resolve().parent / 'lib/kex'
+JAR = HOME / f'kex-runner/target/kex-runner-{VERSION}-jar-with-dependencies.jar'
+
+
+def line():
+    value = sys.stdin.readline()
+    if not value:
+        raise ValueError('Unexpected end of JUGE protocol')
+    return value.rstrip('\r\n')
+
+
+def emit(value):
+    print(value, flush=True)
+
+
+def config_value(text, section, key, value):
+    pattern = rf'(?ms)(^\[{re.escape(section)}\]\s*\n)(.*?)(?=^\[|\Z)'
+    def update(match):
+        body = re.sub(rf'(?m)^{re.escape(key)}\s*=.*\n?', '', match[2])
+        return match[1] + body.rstrip() + f'\n{key} = {value}\n\n'
+    result, count = re.subn(pattern, update, text)
+    if count != 1:
+        raise ValueError(f'Missing or duplicate Kex config section {section}')
+    return result
+
+
+def main():
+    if line() != 'BENCHMARK':
+        raise ValueError('Expected BENCHMARK')
+    line()  # source directory; Kex consumes bytecode
+    binary = line()
+    classpath = [binary] + [line() for _ in range(int(line()))]
+    count = int(line())
+    if not JAR.is_file():
+        raise ValueError('Missing pinned Kex distribution; run fetch.py')
+    emit('CLASSPATH')
+    emit(1)
+    emit(JAR)
+    if count == 0:
+        emit('READY')
+        return
+    if count != 1:
+        raise ValueError('AST2027 adapter requires exactly one target per invocation')
+    if platform.system() != 'Linux' or platform.machine() not in ('x86_64', 'AMD64'):
+        raise ValueError('Kex requires the suite Linux AMD64 runtime; ARM64 Linux silently loses SMT support')
+    seed = int(os.environ['JUGE_TOOL_SEED'])
+    if not 0 <= seed <= 0xffffffff:
+        raise ValueError('Seed must be an unsigned 32-bit integer')
+    emit('READY')
+    budget = int(line())
+    target = line()
+    if budget <= 0 or not re.fullmatch(r'[A-Za-z_][\w]*(\.[A-Za-z_][\w]*)*', target):
+        raise ValueError('Invalid target or budget')
+    temporary = Path('temp').resolve()
+    temporary.mkdir(exist_ok=True)
+    output = temporary / 'kex-output'
+    configuration = (HOME / 'kex.ini').read_text()
+    overrides = {
+        'easy-random': {'seed': seed},
+        'ksmt': {'seed': seed & 0x7fffffff},
+        'concolic': {'timeLimit': budget, 'numberOfExecutors': 1},
+        'kex': {'computeCoverage': 'false', 'computeCoverageSaturation': 'false'},
+        'testGen': {'accessLevel': 'public', 'testsDir': '../testcases', 'logJUnit': 'false'},
+        'executor': {'numberOfWorkers': 1, 'masterJvmParams': '-Xmx512m', 'workerJvmParams': '-Xmx1024m'},
+    }
+    for section, items in overrides.items():
+        for key, value in items.items():
+            configuration = config_value(configuration, section, key, value)
+    config = temporary / 'kex.ini'
+    config.write_text(configuration)
+    java = os.environ.get('KEX_JAVA', '/opt/java8/bin/java')
+    command = [java, '-Xmx1500m', '-Djava.security.manager',
+               f'-Djava.security.policy=={HOME / "kex.policy"}',
+               '-Dlogback.statusListenerClass=ch.qos.logback.core.status.NopStatusListener',
+               '-jar', str(JAR), '--config', str(config), '--classpath', os.pathsep.join(classpath),
+               '--target', target, '--mode', 'concolic', '--output', str(output),
+               '--option', f'executor:executorConfigPath:{config}']
+    Path('kex-command.json').write_text(json.dumps(command, indent=2) + '\n')
+    env = dict(os.environ, KEX_HOME=str(HOME))
+    with Path('kex.log').open('w') as log:
+        generation.run(command, tool='Kex', version=VERSION, seed=seed, target=target,
+                       budget=budget, stdout=log, env=env, timeout=budget + 45)
+    log = Path('kex.log').read_text(errors='replace')
+    failures = ('No loader found', 'UnsatisfiedLinkError', 'OutOfMemoryError',
+                'UnsupportedClassVersionError', 'compiled by a more recent version',
+                'Failed to generate random trace', 'Could not initialize class', '[ERROR]')
+    if any(text in log for text in failures):
+        raise RuntimeError('Kex failed; inspect kex.log')
+    tests = temporary / 'testcases'
+    receipt = Path('seed.json.tmp')
+    receipt.write_text(json.dumps({'seed': seed, 'tool': 'Kex', 'version': VERSION}) + '\n')
+    receipt.replace('seed.json')
+    emit('READY')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as error:
+        print(f'Kex adapter failed: {error}', file=sys.stderr)
+        sys.exit(1)
