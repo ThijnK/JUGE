@@ -205,28 +205,6 @@ compilable suites, positive coverage and mutation scores, and a separate transcr
 row for each class. A failing extension must never reach metrics or aggregation.
 Failed checks retain their working files under `maze_runtool/target/`.
 
-These development-image checks exercise the real runner and metric libraries.
-MAZE v1.2.1 passed the adapter checks and all six pipeline configurations on
-Linux ARM64, including seed/replay-option receipts, generated-suite execution,
-coverage, mutation analysis and exclusion of a failing extension. Separate Linux
-x86-64 checks verified full enumeration of 501 mutants (versus the legacy sample
-of 167) and rejection of a tool that exits before READY after writing partial tests.
-
-On 2026-09-27, the AST2027 workflow using MAZE 1.2.2 passed all 34 A and 16 B
-preflight runs under Linux AMD64 emulation, including real JaCoCo/PIT measurement
-for MAZE, T3, EvoSuite and Kex. Real interruption/resume and statistics export
-checks also passed. These are setup validation, not paper observations.
-
-The full Linux x86-64 image has also been checked separately with the published
-MAZE v1.2.0 package: BFS symbolic, an external strategy, and BFS concrete ran over
-BinarySearch and TriangleClassifier with a five-second budget and one repetition.
-All six results produced compilable tests, positive coverage and mutation metrics,
-and R scoring outputs, including comparison reports and final rankings. This ran
-with two CPUs and 4 GiB of memory under emulation on Apple Silicon.
-
-That smoke test establishes the setup works; it does not validate the full corpus
-or provide a statistically meaningful comparison of strategies.
-
 ## Benchmarking other tools
 
 This benchmarking framework is designed to benchmark any Java unit test generation tool, not just MAZE.

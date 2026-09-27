@@ -34,7 +34,7 @@ process starts; `timeout.json` records an adapter deadline. Neither claims a
 successful generated suite. JUGE/experiment code decides how outcomes are scored.
 
 Provisioning builds the small Java 8/21/Python image in
-`experiments/ast2027/Dockerfile`; that is the supplied runtime, not a dependency on
-MAZE source. Downloads and build outputs stay outside tracked source directories.
+`experiments/ast2027/Dockerfile`. Downloads and build outputs stay outside tracked
+source directories.
 
 Adapter process checks: `python3 -m unittest discover -s tools/seeded/tests -v`.

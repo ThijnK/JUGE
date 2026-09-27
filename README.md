@@ -14,9 +14,8 @@ mutation analysis and repeated experiments.
   and 2026 experiment archives, including study-specific analysis scripts.
 
 MAZE is downloaded as a separate packaged release. AST2027 requires Docker and
-Python on the host; a MAZE source checkout is unnecessary. Experiment outputs are
+Python on the host. Experiment outputs are
 saved outside version-controlled sources and can be distributed as release assets.
-Personal scheduling and notification instructions belong in ignored `local/`.
 
 ## Original JUGE README
 

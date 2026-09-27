@@ -1,7 +1,6 @@
 # AST2027 methodology and audit
 
-This is a fresh evaluation of the improved MAZE engine, not a replication of
-thesis scores. MAZE 1.2.2 enforces the remaining search budget in Z3 and retains
+MAZE 1.2.2 enforces the remaining search budget in Z3 and retains
 completed tests on solver deadline expiration. Version 1.2.1 added bounded
 candidate replay. These limits are engine behavior shared by all MAZE treatments.
 They do not guarantee termination of arbitrary subject/library execution.
@@ -85,21 +84,11 @@ Subject characteristics use JaCoCo on frozen bytecode, including private methods
 and constructors of the CUT, excluding nested classes. Physical LOC includes
 blank/comment lines. `feature-tags.json` is hand-assigned descriptive metadata.
 
-## Change and intervention record
+## Recording changes and interventions
 
-2026-09-27: moved the experiment from a local MAZE prototype into JUGE; removed
-its dependency on a MAZE checkout; pinned released MAZE 1.2.2; added the approved
-failure-inclusive outcome policy and selection, retaining successful-only tables.
-Seeded adapters now emit invocation/deadline evidence and accept verified empty
-output. Scientific subjects, budgets, strategy options and seed schedule were
-preserved. Personal reporting/scheduling instructions live in ignored `local/`.
+Keep preflight, diagnostic and rehearsal runs separate from the paper dataset.
+Run fresh preflights for each frozen environment.
 
-Earlier preflights and solver diagnostics under the MAZE checkout are historical
-validation only. The old failed IntUtils preflight/environment remain preserved;
-none of those rows enter the paper dataset. MAZE's solver fix passed all 1,178
-tests (31 skipped) and both release-archive checks. Fresh JUGE preflights are still
-required for each frozen environment.
-
-For every later change/intervention, record date, reason, affected settings,
+Record each change or intervention with its date, reason, affected settings,
 validation and disposition of prior attempts in the results' `operator-log.md`.
 Report these details alongside completion counts. Never alter frozen raw evidence.

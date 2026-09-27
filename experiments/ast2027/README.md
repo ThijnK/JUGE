@@ -1,8 +1,7 @@
 # AST 2027 experiments
 
 Reproduce the MAZE search-strategy and tool-comparison experiments with this
-JUGE fork. Docker and Python 3.9+ are the only host requirements. A separate MAZE
-checkout, the historical ZIP and an LLM are not required.
+JUGE fork. The host requires Docker and Python 3.9+.
 
 The engine is checksum-pinned **MAZE 1.2.2**. The runner uses Linux AMD64 for all
 four tools (emulated on ARM hosts), two CPUs and 4 GiB per sequential run. Read
@@ -77,8 +76,7 @@ Expect multiple sessions: a full matrix is substantially longer than one night.
 
 `status` returns measured, timeout, empty, unresolved/excluded and pending counts,
 completed repetitions, the active run and stop state. `progress.log` records run
-starts/completions and interventions. Execution has no dependency on a chat or
-notification service; a person or monitor can poll this command.
+starts/completions and interventions. Poll `status` for monitoring.
 
 ```sh
 python3 "$RUNNER" stop --results "$RESULTS"
