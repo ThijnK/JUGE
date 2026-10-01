@@ -22,6 +22,7 @@ class GenerationTests(unittest.TestCase):
                 self.invoke('pass')
                 self.assertEqual(json.loads(Path('invocation.json').read_text())['seed'],42)
                 self.assertFalse(Path('timeout.json').exists())
+                self.assertEqual(json.loads(Path('termination.json').read_text())['exit_code'], 0)
                 with self.assertRaises(subprocess.TimeoutExpired):
                     self.invoke('import time; time.sleep(5)', timeout=.1)
                 self.assertEqual(json.loads(Path('timeout.json').read_text())['reason'],'adapter_generation_timeout')

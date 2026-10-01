@@ -4,10 +4,12 @@ import os
 from pathlib import Path
 import signal
 import subprocess
+import time
 
 
 def run(command, *, tool, version, seed, target, budget, timeout, stdout, env=None):
     receipt = dict(tool=tool, version=version, seed=seed, target=target, budget=budget)
+    started = time.monotonic()
     process = subprocess.Popen(command, stdout=stdout, stderr=subprocess.STDOUT,
                                env=env, start_new_session=True)
     Path('invocation.json').write_text(json.dumps(receipt) + '\n')
@@ -22,5 +24,11 @@ def run(command, *, tool, version, seed, target, budget, timeout, stdout, env=No
         except ProcessLookupError:
             pass
         process.wait()
+        final = dict(receipt, exit_code=process.returncode,
+                     wall_seconds=time.monotonic() - started,
+                     timed_out=Path('timeout.json').exists())
+        temporary = Path('termination.json.tmp')
+        temporary.write_text(json.dumps(final) + '\n')
+        temporary.replace('termination.json')
     if code:
         raise subprocess.CalledProcessError(code, command)

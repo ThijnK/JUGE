@@ -49,13 +49,15 @@ def main():
         Path('tool-command.json').write_text(json.dumps(command, indent=2) + '\n')
         with Path('tool.log').open('w') as log:
             generation.run(command, tool='EvoSuite', version=VERSION, seed=seed, target=target,
-                           budget=budget, stdout=log, timeout=budget + 5,
+                           budget=budget, stdout=log, timeout=2 * budget,
                            env={**os.environ, 'JAVA_HOME': '/opt/java8', 'PATH': '/opt/java8/bin:' + os.environ['PATH']})
         log_text = Path('tool.log').read_text(errors='replace')
+        if 'Error when generating tests for:' in log_text or 'OutOfMemoryError' in log_text:
+            Path('tool-failure.json').write_text(json.dumps(dict(tool='EvoSuite', version=VERSION,
+                seed=seed, target=target, budget=budget, reason='reported_generator_failure')) + '\n')
+            raise RuntimeError('EvoSuite reported a generator failure')
         if '* Done!' not in log_text or '* Using seed ' + str(seed) not in log_text:
             raise RuntimeError('EvoSuite did not attest completed seeded generation')
-        if 'Error when generating tests for:' in log_text or 'OutOfMemoryError' in log_text:
-            raise RuntimeError('EvoSuite reported a generator failure')
         Path('seed.json').write_text(json.dumps({'seed': seed, 'tool': 'EvoSuite', 'version': VERSION}) + '\n')
         print('READY', flush=True)
 
