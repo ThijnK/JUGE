@@ -78,6 +78,43 @@ python3 "$RESULTS/suite/campaign.py" generate --results "$RESULTS" --experiment 
 python3 "$RESULTS/suite/campaign.py" measure --results "$RESULTS" --experiment B
 ```
 
+## Run unattended with periodic reports
+
+The campaign is a normal Python program. It requires no agent or scheduled chat
+monitor. After preparation, preflight and rehearsal, run it in the foreground:
+
+```sh
+python3 "$RESULTS/suite/campaign.py" run --results "$RESULTS" --progress-interval 900
+```
+
+The default interval is 900 seconds (15 minutes). Reports also appear at startup,
+phase changes, and command completion, interruption or failure. They show resolved
+and planned counts for each experiment and phase, outcome counts, active case IDs
+and elapsed times, unresolved reasons, and free disk space. Confirmed generation
+failures/empty output need no measurement and are reported as `not_required` in
+measurement phases; unresolved failures stay separate from resolved results.
+
+Reports go to the terminal and append to `progress-reports.jsonl` in the results
+directory. They read small checkpoints without hashing test artifacts or invoking
+Docker statistics. The coordinator checks the timer while scheduling/waiting for
+workers and between verification records; reports can be delayed by a blocking
+operation. Reporting does not alter retry policies or launch jobs. Status is an
+informational snapshot, not evidence verification or a guarantee of worker health.
+These are terminal/file reports, not chat messages or desktop notifications.
+
+To continue after disconnecting the shell, start the validated campaign with:
+
+```sh
+nohup python3 "$RESULTS/suite/campaign.py" run --results "$RESULTS" \
+  --progress-interval 900 >> "$RESULTS/campaign-console.log" 2>&1 < /dev/null &
+tail -f "$RESULTS/campaign-console.log"
+```
+
+Exit `tail` with Ctrl+C; that leaves the background runner active. Use the `stop`
+command below to stop the campaign. For a stopped campaign, use `resume` in the
+same launch command. Keep the computer awake and Docker/WSL running. Statistical
+analysis remains a separate, explicitly requested step.
+
 ## Status, stopping and recovery
 
 ```sh

@@ -15,6 +15,7 @@ import uuid
 
 from common import atomic, digest, fingerprint, identity, read, selection, valid_record
 from bench import lock, manifest, verify_environment
+from progress import ProgressReporter
 
 GENERATION_OUTCOMES = {'generated', 'empty', 'tool_timeout', 'tool_failure'}
 ZERO_OUTCOMES = GENERATION_OUTCOMES - {'generated'}
@@ -159,10 +160,14 @@ def reconcile(root, spec):
         finish_attempt(root, spec, by_id[active['id']], active)
 
 
-def run_stage(root, spec, rows, phase, stop):
+def run_stage(root, spec, rows, phase, stop, reporter=None):
+    if reporter:
+        reporter.start_stage(phase, rows)
     jobs = spec['campaign']['generation_jobs' if phase == 'generation' else 'measurement_jobs']
     pending = []
     for row in rows:
+        if reporter:
+            reporter.report()
         rec = verified(root, stage_path(root, row, phase), spec['id'])
         if rec is None and list((root / 'attempts' / row['id']).glob(phase + '-*')):
             raise ValueError('Attempt exists without a checkpoint; inspect before retrying: ' + row['id'])
@@ -183,6 +188,8 @@ def run_stage(root, spec, rows, phase, stop):
     with ThreadPoolExecutor(max_workers=jobs) as pool:
         running = {}
         while pending or running:
+            if reporter:
+                reporter.report()
             while pending and len(running) < jobs and not stop.is_set() and not stopped(root):
                 if shutil.disk_usage(root).free < 5 * 1024**3:
                     stop.set()
@@ -207,9 +214,11 @@ def run_stage(root, spec, rows, phase, stop):
     return not stop.is_set() and not stopped(root)
 
 
-def assemble(root, spec, rows):
+def assemble(root, spec, rows, reporter=None):
     complete = True
     for row in rows:
+        if reporter:
+            reporter.report()
         gen = verified(root, stage_path(root, row, 'generation'), spec['id'])
         if not gen:
             complete = False
@@ -260,7 +269,11 @@ def main():
     p.add_argument('command', choices=['run', 'resume', 'generate', 'measure', 'rehearse', 'status', 'stop'])
     p.add_argument('--results', required=True, type=Path)
     p.add_argument('--experiment', choices=['A', 'B'], default='A')
+    p.add_argument('--progress-interval', type=int, default=900, metavar='SECONDS',
+                   help='Periodic terminal and JSONL progress reports (default: 900 seconds)')
     args = p.parse_args()
+    if args.progress_interval <= 0:
+        p.error('--progress-interval must be positive')
     root = args.results.resolve()
     spec = manifest(root)
     if args.command in ('run', 'resume', 'generate', 'measure') and spec.get('purpose') != 'production':
@@ -274,7 +287,7 @@ def main():
         import json
         print(json.dumps(status(root, spec), indent=2))
         return
-    with lock(root):
+    with lock(root), ProgressReporter(root, spec, args.command, args.progress_interval) as reporter:
         verify_environment(root, spec)
         for name in (() if args.command == 'rehearse' else ('preflight.json', 'preflight-B.json', 'rehearsal.json')):
             cert = read(root / name)
@@ -294,6 +307,7 @@ def main():
         if args.command in ('resume', 'rehearse'):
             (root / 'STOP').unlink(missing_ok=True)
         stop = threading.Event()
+        reporter.stop = stop
         def halt(signum, frame):
             stop.set()
         for sig in (signal.SIGINT, signal.SIGTERM):
@@ -315,11 +329,12 @@ def main():
                 (r['experiment'] == 'A' and r['subject'] == 'HeapSort' and r['treatment'] == 'DFS' and r['budget'] == 10)
                 or (r['experiment'] == 'B' and (r['subject'] == 'BinarySearch'
                     or (r['tool'] == 'T3' and r['subject'] == 'StringPatternMatcher'))))]
+            reporter.root, reporter.rows = root, rows
             for phase in ('generation', 'coverage', 'mutation'):
                 eligible = [r for r in rows if phase != 'mutation' or r['experiment'] == 'B']
-                if not run_stage(root, spec, eligible, phase, stop):
+                if not run_stage(root, spec, eligible, phase, stop, reporter):
                     return
-            if not assemble(root, spec, rows):
+            if not assemble(root, spec, rows, reporter):
                 raise ValueError('Rehearsal has unresolved results')
             for row in rows:
                 rec = verified(root, root / 'runs' / (row['id'] + '.json'))
@@ -339,14 +354,14 @@ def main():
                     raise ValueError('B requires complete verified A measurements')
                 atomic(root / 'selection.json', chosen)
             if args.command != 'measure':
-                if not run_stage(root, spec, rows, 'generation', stop):
+                if not run_stage(root, spec, rows, 'generation', stop, reporter):
                     return
             if args.command != 'generate':
-                if not run_stage(root, spec, rows, 'coverage', stop):
+                if not run_stage(root, spec, rows, 'coverage', stop, reporter):
                     return
-                if experiment == 'B' and not run_stage(root, spec, rows, 'mutation', stop):
+                if experiment == 'B' and not run_stage(root, spec, rows, 'mutation', stop, reporter):
                     return
-                if not assemble(root, spec, rows):
+                if not assemble(root, spec, rows, reporter):
                     raise ValueError('Unresolved cases remain; inspect stages. Tool failures are scored, infrastructure/measurement failures are not.')
         if args.command in ('run', 'resume'):
             atomic(root / 'campaign-complete.json', dict(manifest_id=spec['id'], finished_at=time.time()))
