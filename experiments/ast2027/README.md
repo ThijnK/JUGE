@@ -13,10 +13,10 @@ Read [methodology](docs/methodology.md) before interpreting results.
 
 ## Prepare
 
-Choose a tested Linux AMD64 MAZE distribution containing the exploration-reserve
-fix (1.2.3 or its development snapshot). A local archive is copied and hashed;
-no unpublished GitHub release is assumed. Build it with MAZE's documented
-`distribution/build.sh` workflow if a published archive is unavailable.
+Preparation downloads the published Linux AMD64 MAZE 1.2.3 distribution and
+verifies its pinned checksum. To test a different engine build, supply
+`--maze-package /absolute/path/to/maze-linux-amd64.tar.gz`; the local archive is
+copied and hashed into the frozen environment.
 
 From this JUGE checkout:
 
@@ -24,7 +24,6 @@ From this JUGE checkout:
 python3 tools/seeded/provision.py --output "$PWD/local/ast2027/tools"
 python3 experiments/ast2027/bench.py prepare --campaign \
   --results "$PWD/results/ast2027" --purpose production \
-  --maze-package /absolute/path/to/maze-linux-amd64.tar.gz \
   --tools "$PWD/local/ast2027/tools/tools.json" \
   --generation-jobs 1 --measurement-jobs 1 --cpus 2 --memory-gb 4
 ```

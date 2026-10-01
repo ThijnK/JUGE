@@ -8,15 +8,15 @@ same path as shipped strategies; no launcher or Java source edits are necessary.
 For the AST2027 study, use the [experiment runner](../experiments/ast2027/README.md).
 It provides pinned setup, preflight, a parallel campaign with separate generation
 and measurement stages, failure-inclusive analysis and saved raw evidence. The
-campaign accepts an explicit MAZE archive; the examples below use the published
-1.2.2 integration package. The commands below remain the general MAZE integration.
+campaign pins the published MAZE 1.2.3 archive by checksum and also accepts an
+explicit local archive. The commands below cover the general MAZE integration.
 
-MAZE 1.2.2 additionally applies the run deadline to Z3 checks, retaining completed
-tests when solving reaches that deadline.
+MAZE 1.2.3 enforces the symbolic exploration deadline during solving and replay,
+preserving the remaining budget for generating tests from unfinished paths.
 
 ## Prepare the environment
 
-Use the published [MAZE v1.2.2 package](https://github.com/ThijnK/maze/releases/tag/v1.2.2).
+Use the published [MAZE v1.2.3 package](https://github.com/ThijnK/maze/releases/tag/v1.2.3).
 Download it separately; MAZE does not need to be copied into this repository or
 built from source.
 
@@ -31,12 +31,12 @@ From the JUGE checkout, download and verify the package in a sibling directory:
 mkdir -p ../maze-packages
 (
   cd ../maze-packages
-  curl --fail --location --remote-name https://github.com/ThijnK/maze/releases/download/v1.2.2/maze-1.2.2-linux-amd64.tar.gz
-  curl --fail --location --remote-name https://github.com/ThijnK/maze/releases/download/v1.2.2/maze-1.2.2-linux-amd64.tar.gz.sha256
-  shasum -a 256 -c maze-1.2.2-linux-amd64.tar.gz.sha256 &&
-    tar -xzf maze-1.2.2-linux-amd64.tar.gz
+  curl --fail --location --remote-name https://github.com/ThijnK/maze/releases/download/v1.2.3/maze-1.2.3-linux-amd64.tar.gz
+  curl --fail --location --remote-name https://github.com/ThijnK/maze/releases/download/v1.2.3/maze-1.2.3-linux-amd64.tar.gz.sha256
+  shasum -a 256 -c maze-1.2.3-linux-amd64.tar.gz.sha256 &&
+    tar -xzf maze-1.2.3-linux-amd64.tar.gz
 )
-MAZE_PACKAGE="$(cd ../maze-packages/maze-1.2.2-linux-amd64 && pwd)"
+MAZE_PACKAGE="$(cd ../maze-packages/maze-1.2.3-linux-amd64 && pwd)"
 ```
 
 Keep that directory for future runs. Build and start JUGE from the same shell:

@@ -93,8 +93,6 @@ def remove_container(name):
 
 
 def prepare(args, root):
-    if args.campaign and not args.maze_package:
-        raise SystemExit('Campaign preparation requires --maze-package with the tested engine archive.')
     if args.campaign and min(args.generation_jobs, args.measurement_jobs, args.cpus, args.memory_gb) < 1:
         raise SystemExit('Resource limits and job counts must be positive.')
     if (root / 'manifest.json').exists() or (root / 'env').exists():

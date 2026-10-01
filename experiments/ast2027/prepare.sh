@@ -26,16 +26,16 @@ assert Path('/results/env/maze/architecture').read_text().strip() == 'amd64'
 Path('/results/env/maze-release.json').write_text(json.dumps(meta))
 PACKAGE
 else
-release=maze-1.2.2-linux-amd64
-release_sha256=75582c006c965677968de303c774e437f72176b1aacf8925e528ce07e47b24f4
-release_url=https://github.com/ThijnK/maze/releases/download/v1.2.2/$release.tar.gz
+release=maze-1.2.3-linux-amd64
+release_sha256=8cec2a7d6e6d71fa9006a9fd664c96d0f0dfa34437c3d814cd7fbe7ea476af86
+release_url=https://github.com/ThijnK/maze/releases/download/v1.2.3/$release.tar.gz
 mkdir -p /results/downloads /results/env
 curl --fail --location --retry 3 "$release_url" -o "/results/downloads/$release.tar.gz"
 printf '%s  %s\n' "$release_sha256" "/results/downloads/$release.tar.gz" | sha256sum -c -
 tar -xzf "/results/downloads/$release.tar.gz" -C /results/env
 mv "/results/env/$release" /results/env/maze
-test "$(/results/env/maze/maze --version)" = 'maze 1.2.2'
-printf '{"version":"1.2.2","url":"%s","sha256":"%s"}\n' "$release_url" "$release_sha256" > /results/env/maze-release.json
+test "$(/results/env/maze/maze --version)" = 'maze 1.2.3'
+printf '{"version":"1.2.3","url":"%s","sha256":"%s"}\n' "$release_url" "$release_sha256" > /results/env/maze-release.json
 fi
 cd /juge
 mvn -B -ntp -N -DskipTests install
