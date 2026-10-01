@@ -5,6 +5,7 @@ from collections import Counter
 from contextlib import contextmanager
 import fcntl
 import os
+import random
 from pathlib import Path
 import platform
 import shutil
@@ -14,7 +15,7 @@ import sys
 import time
 import uuid
 
-from common import OUTCOME_POLICY, SUBJECTS, atomic, fingerprint, identity, matrix, read, selection, valid_record
+from common import OUTCOME_POLICY, SUBJECTS, atomic, digest, fingerprint, identity, matrix, read, selection, valid_record
 
 HERE = Path(__file__).resolve().parent
 JUGE = HERE.parent.parent
@@ -37,7 +38,10 @@ def lock(root):
 
 
 def docker(root, image, extra=()):
-    return ['docker', 'run', '--platform', PLATFORM, '--rm', '--init', '--cpus=2', '--memory=4g', '--network=none',
+    config = read(root / 'manifest.json').get('campaign', {}) if (root / 'manifest.json').exists() else {}
+    cpus = config.get('cpus', 2)
+    memory = str(config.get('memory_gb', 4)) + 'g'
+    return ['docker', 'run', '--platform', PLATFORM, '--rm', '--init', '--cpus=' + str(cpus), '--memory=' + memory, *(['--memory-swap=' + memory] if config else []), '--network=none',
             '-e', 'PYTHONDONTWRITEBYTECODE=1', '-e', 'JDK_JAVA_OPTIONS=-Xmx2500m',
             '-v', str(root) + ':/results', '-v', str(root / 'env') + ':/results/env:ro',
             '-v', str(root / 'suite') + ':/suite:ro',
@@ -66,7 +70,7 @@ def verify_environment(root, spec):
 
 
 def progress(root, spec, verify=True):
-    counts = {e: Counter(total=sum(r['experiment'] == e for r in spec['runs']), ok=0, tool_timeout=0, empty=0, excluded=0, pending=0) for e in ('A', 'B')}
+    counts = {e: Counter(total=sum(r['experiment'] == e for r in spec['runs']), ok=0, tool_timeout=0, tool_failure=0, empty=0, excluded=0, pending=0) for e in ('A', 'B')}
     reasons = Counter()
     statuses = {}
     for row in spec['runs']:
@@ -89,6 +93,10 @@ def remove_container(name):
 
 
 def prepare(args, root):
+    if args.campaign and not args.maze_package:
+        raise SystemExit('Campaign preparation requires --maze-package with the tested engine archive.')
+    if args.campaign and min(args.generation_jobs, args.measurement_jobs, args.cpus, args.memory_gb) < 1:
+        raise SystemExit('Resource limits and job counts must be positive.')
     if (root / 'manifest.json').exists() or (root / 'env').exists():
         raise SystemExit('Prepare requires a fresh directory. Existing data are never overwritten.')
     juge = JUGE
@@ -97,12 +105,21 @@ def prepare(args, root):
                          ('benchmarktool/src/main/java/sbst/benchmark/pitest/PITWrapper.java', 'sbst.benchmark.allMutants')]:
         if needle not in (juge / path).read_text():
             raise SystemExit('Missing required JUGE control: ' + needle)
-    subprocess.run(['docker', 'build', '--platform', PLATFORM, '-t', IMAGE, '-f', str(HERE / 'Dockerfile'), str(JUGE)], check=True)
-    image = checked(['docker', 'image', 'inspect', '--format', '{{.Id}}', IMAGE])
+    build_image = 'maze-ast2027-campaign-build:amd64' if args.campaign else IMAGE
+    subprocess.run(['docker', 'build', '--platform', PLATFORM, '-t', build_image, '-f', str(HERE / 'Dockerfile'), str(JUGE)], check=True)
+    image = checked(['docker', 'image', 'inspect', '--format', '{{.Id}}', build_image])
+    # Containerd can drop an untagged image index after its last container exits.
+    # Keep a unique local reference so another preparation cannot orphan it.
+    image_tag = 'maze-ast2027-frozen:' + uuid.uuid4().hex
+    subprocess.run(['docker', 'image', 'tag', image, image_tag], check=True)
     shutil.copytree(HERE, root / 'suite', ignore=shutil.ignore_patterns('__pycache__'))
     command = ['docker', 'run', '--platform', PLATFORM, '--rm', '--init', '--cpus=2', '--memory=4g',
                '-v', str(juge) + ':/juge', '-v', str(root) + ':/results',
                '-v', 'maze-ast2027-maven:/root/.m2', image, 'sh', '/results/suite/prepare.sh']
+    if args.maze_package:
+        package = Path(args.maze_package).resolve()
+        shutil.copy2(package, root / 'maze-package.tar.gz')
+        atomic(root / 'maze-package.json', dict(sha256=digest(package), source=str(package)))
     with (root / 'prepare.log').open('w') as log:
         subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True)
     source_subjects = sorted(p.stem for p in (root / 'env/subjects/src').glob('*.java'))
@@ -124,15 +141,30 @@ def prepare(args, root):
             folder = Path(definition['directory']).resolve()
             if not os.access(folder / 'runtool', os.X_OK):
                 raise SystemExit('Tool has no executable runtool: ' + name)
+            if args.campaign:
+                for adapter in ('runtool', 'generation.py'):
+                    source = JUGE / 'tools/seeded' / (name.lower() + '/runtool' if adapter == 'runtool' else adapter)
+                    if not (folder / adapter).exists() or (folder / adapter).read_bytes() != source.read_bytes():
+                        raise SystemExit('Reprovision adapters from this revision: ' + name + '/' + adapter)
             shutil.copytree(folder, root / 'env/tools' / name)
             external[name] = {k: v for k, v in definition.items() if k != 'directory'}
     atomic(root / 'env/tools.json', external)
-    spec = dict(schema=2, outcome_policy=OUTCOME_POLICY, image=image, execution_platform=PLATFORM, created_at=time.time(), host={'name': platform.node(), 'architecture': platform.machine(), 'platform': platform.platform()},
+    spec = dict(schema=2, outcome_policy=OUTCOME_POLICY, image=image, image_tag=image_tag, execution_platform=PLATFORM, created_at=time.time(), host={'name': platform.node(), 'architecture': platform.machine(), 'platform': platform.platform()},
                 repositories=repositories, environment=fingerprint(root / 'env'), suite=fingerprint(root / 'suite'),
                 b_repetitions=args.b_repetitions, purpose=args.purpose, runs=matrix(args.b_repetitions),
                 resources=dict(cpus=2, container_memory='4g', maze_jvm_heap='2500m', juge_jvm_heap='1500m', a_watchdog_seconds=300, b_watchdog_seconds=1800),
                 selection_rule='maximum unweighted mean of per-subject mean branch coverage at 60s; failure-inclusive outcomes; all 20 subjects and 10 repetitions required; ties use DFS,BFS,SGS,RPS,COS,FOS,FOS+COS order',
                 statistics_policy='alpha=.05; MWU two-sided asymptotic tie-corrected with continuity correction; quartiles linear; sample SD; Friedman on complete subject blocks of treatment means; Nemenyi studentized-range infinite df / sqrt(2); ties average ranks and all co-winners counted')
+    if args.campaign:
+        spec['campaign'] = dict(generation_jobs=args.generation_jobs, measurement_jobs=args.measurement_jobs,
+                                cpus=args.cpus, memory_gb=args.memory_gb, order_seed=2027,
+                                generation_retry='only proven container startup failure; at most one retry',
+                                measurement_retry='at most one retry of the same saved suite',
+                                partial_output='retained; failed generation scores zero',
+                                mutation='isolated JVM; 180s per child, 3600s total; timeout-only mutants ignored')
+        spec['outcome_policy'] = dict(OUTCOME_POLICY, version=2, tool_failure='confirmed generator failure: zero delivered effectiveness')
+        spec['resources'].update(cpus=args.cpus, container_memory=str(args.memory_gb)+'g', b_watchdog_seconds=4200)
+        random.Random(2027).shuffle(spec['runs'])
     spec['id'] = identity(spec)
     atomic(root / 'manifest.json', spec)
     append(root, f'prepared {len(spec["runs"])} rows; image={image}; missing B tools={sorted(set(["T3", "EvoSuite", "Kex"]) - external.keys())}')
@@ -236,7 +268,7 @@ def run(args, root, spec):
                 (r['treatment'] == 'BFS' and r['repetition'] == 1))]
             rows += [r for r in spec['runs'] if r['experiment'] == 'B' and r['tool'] == 'MAZE' and r['subject'] == 'BinarySearch' and r['repetition'] == 1]
         else:
-            rows = [r for r in rows if r['subject'] in ('BinarySearch', 'TriangleClassifier') and r['repetition'] in (1, 2)]
+            rows = [r for r in rows if r['subject'] in (('BinarySearch', 'TriangleClassifier', 'BitwiseManipulator', 'StringPatternMatcher', 'FloatStatistics', 'StringUtils', 'BinaryTree') if spec.get('campaign') else ('BinarySearch', 'TriangleClassifier')) and r['repetition'] in (1, 2)]
         atomic(root / 'selection.json', dict(manifest_id=spec['id'], treatment='BFS', purpose='PIT preflight only'))
     if args.experiment == 'B':
         chosen = read(root / 'selection.json') if (root / 'selection.json').exists() else {}
@@ -264,7 +296,7 @@ def run(args, root, spec):
             append(root, 'STOP low disk space')
             break
         append(root, 'start ' + row['id'])
-        rec = execute(root, spec, row, 300 if row['experiment'] == 'A' else 1800, control_root)
+        rec = execute(root, spec, row, 300 if row['experiment'] == 'A' else (4200 if spec.get('campaign') else 1800), control_root)
         if rec is None:
             append(root, 'interrupted ' + row['id'] + '; retry on resume')
             break
@@ -281,13 +313,13 @@ def run(args, root, spec):
             return 3
     if args.command == 'smoke':
         records = [valid_record(root, r, spec['id']) for r in rows]
-        if not all(rec and (rec['status'] == 'ok' or (row['experiment'] == 'A'
+        if not all(rec and (rec['status'] == 'ok' or ((row['experiment'] == 'A' or spec.get('campaign'))
                 and row['subject'] not in ('BinarySearch', 'TriangleClassifier')
-                and rec['status'] in ('tool_timeout', 'empty'))) for row, rec in zip(rows, records)):
+                and rec['status'] in ('tool_timeout', 'tool_failure', 'empty'))) for row, rec in zip(rows, records)):
             return 3
         # Seed receipts and generated suites demonstrate plumbing; equal coverage is permitted.
         atomic(parent / preflight_file, dict(environment_id=identity(spec['environment']), run_ids=[r['id'] for r in rows],
-                                            seeds=[r['seed'] for r in rows], passed_at=time.time()))
+                                            seeds=[r['seed'] for r in rows], manifest_id=spec['id'], passed_at=time.time()))
         append(root, f'preflight passed: {len(rows)} real runs for experiment {args.experiment}')
     atomic(root / 'progress.json', progress(root, spec))
     return 0
@@ -305,6 +337,12 @@ def main():
     p.add_argument('--max-runs', type=int, default=100000)
     p.add_argument('--min-free-gb', type=float, default=5)
     p.add_argument('--retry-excluded', action='store_true')
+    p.add_argument('--campaign', action='store_true', help='Freeze a stage-separated parallel campaign')
+    p.add_argument('--maze-package', type=Path, help='Local Linux AMD64 MAZE distribution; copied and hashed')
+    p.add_argument('--generation-jobs', type=int, default=1)
+    p.add_argument('--measurement-jobs', type=int, default=1)
+    p.add_argument('--cpus', type=int, default=2)
+    p.add_argument('--memory-gb', type=int, default=4)
     args = p.parse_args()
     root = args.results.resolve()
     root.mkdir(parents=True, exist_ok=True)
@@ -324,6 +362,8 @@ def main():
             prepare(args, root)
             return 0
         spec = manifest(root)
+        if spec.get('campaign') and args.command in ('run', 'resume'):
+            raise SystemExit('Use the frozen campaign.py run/resume for this manifest.')
         if args.command == 'resume':
             (root / 'STOP').unlink(missing_ok=True)
             args.command = 'run'

@@ -10,11 +10,11 @@ from common import atomic, matrix
 import worker
 
 class WorkerOutcomeTests(unittest.TestCase):
-    def exercise(self, timeout=False, receipt=True, seed_matches=True):
+    def exercise(self, timeout=False, receipt=True, seed_matches=True, exit_code=0):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)
             row=next(r for r in matrix() if r['tool']=='T3')
-            atomic(root/'manifest.json',dict(id='m',host={}))
+            atomic(root/'manifest.json',dict(id='m',host={},campaign={'enabled':True}))
             atomic(root/'env/versions.json',{})
             atomic(root/'env/tools.json',{'T3':dict(version='v',seed_env='JUGE_TOOL_SEED')})
             (root/'env/tools/T3').mkdir(parents=True)
@@ -28,8 +28,9 @@ class WorkerOutcomeTests(unittest.TestCase):
                 if receipt:
                     atomic(directory/'invocation.json',dict(tool='T3',version='v',seed=row['seed'] if seed_matches else 0,
                         target='nl.uu.maze.benchmarks.'+row['subject'],budget=row['budget']))
+                atomic(directory/'termination.json',dict(exit_code=exit_code))
                 (directory/'temp/testcases').mkdir(parents=True)
-                return SimpleNamespace(returncode=1 if timeout else 0)
+                return SimpleNamespace(returncode=1 if timeout else exit_code)
             with patch.object(worker.subprocess,'run',side_effect=juge) as call:
                 result=worker.run_one(root,row,'artifacts/attempt')
             self.assertEqual(call.call_count,1, 'empty/timeout must not fabricate measurement calls')
@@ -46,3 +47,8 @@ class WorkerOutcomeTests(unittest.TestCase):
         self.assertEqual(self.exercise(timeout=True)['status'],'tool_timeout')
         self.assertEqual(self.exercise(timeout=True,receipt=False)['status'],'excluded')
         self.assertEqual(self.exercise(timeout=True,seed_matches=False)['status'],'excluded')
+
+    def test_confirmed_native_failure_is_zero_scoreable_without_measurement(self):
+        self.assertEqual(self.exercise(exit_code=7)['status'], 'tool_failure')
+        self.assertEqual(self.exercise(exit_code=7, receipt=False)['status'], 'excluded')
+        self.assertEqual(self.exercise(exit_code=7, seed_matches=False)['status'], 'excluded')

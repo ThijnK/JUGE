@@ -13,3 +13,7 @@ infrastructure/benchmarks\_\*
 # Ignore results of any tool
 
 tools/\_/results\_\_
+
+# Local experiments and managed worktrees are not build inputs.
+local/
+results/

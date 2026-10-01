@@ -6,8 +6,10 @@ with a named experiment configuration. External strategies and heuristics use th
 same path as shipped strategies; no launcher or Java source edits are necessary.
 
 For the AST2027 study, use the [experiment runner](../experiments/ast2027/README.md).
-It provides pinned setup, preflight, run/status/resume, failure-inclusive analysis
-and saved raw evidence. The commands below remain the general MAZE integration.
+It provides pinned setup, preflight, a parallel campaign with separate generation
+and measurement stages, failure-inclusive analysis and saved raw evidence. The
+campaign accepts an explicit MAZE archive; the examples below use the published
+1.2.2 integration package. The commands below remain the general MAZE integration.
 
 MAZE 1.2.2 additionally applies the run deadline to Z3 checks, retaining completed
 tests when solving reaches that deadline.

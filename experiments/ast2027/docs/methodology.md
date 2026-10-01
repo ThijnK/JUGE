@@ -1,8 +1,9 @@
 # AST2027 methodology and audit
 
-MAZE 1.2.2 enforces the remaining search budget in Z3 and retains
-completed tests on solver deadline expiration. Version 1.2.1 added bounded
-candidate replay. These limits are engine behavior shared by all MAZE treatments.
+The campaign pins the supplied MAZE archive, including its version and hash.
+The exploration-reserve fix enforces phase deadlines in Z3 and retains the
+final 30% of the symbolic budget for unfinished-path generation. Bounded
+candidate replay remains enabled. These limits are engine behavior shared by all MAZE treatments.
 They do not guarantee termination of arbitrary subject/library execution.
 
 ## Fixed experimental choices
@@ -16,7 +17,7 @@ They do not guarantee termination of arbitrary subject/library execution.
   constraints and division-by-zero checking. FOS+COS starts with FOS and uses
   MAZE's existing time slices. Settings are explicit in `common.py`.
 - Seeds derive from subject/budget/repetition and are paired across treatments
-  and tools. Run order is fixed, repetition-major, not randomized. Host load,
+  and tools. Campaign run order is shuffled once with a recorded seed and frozen in the manifest. Host load,
   emulation and thermal drift can affect time-limited search. Record interruptions
   and relevant host changes. Seeds do not guarantee identical generated suites.
 - T3 is built from unmodified upstream source. Its existing T3Random API receives
@@ -24,8 +25,8 @@ They do not guarantee termination of arbitrary subject/library execution.
   T3 repetitions therefore include uncontrolled Worklist randomness; the recorded
   seed is insufficient to replay all random choices, even on the same machine.
 - All tools use Linux AMD64 because Kex's native solver requires it; this is
-  emulated on ARM hosts. Each row gets two CPUs and 4 GiB; MAZE's heap is 2500 MiB
-  and JUGE's is 1500 MiB. Other tool/executor heap settings are in their wrappers.
+  emulated on ARM hosts. Per-row CPU/memory limits and stage concurrency are frozen at preparation; defaults
+  are two CPUs and 4 GiB. MAZE's heap is 2500 MiB and JUGE's is 1500 MiB. Other tool/executor heap settings are in their wrappers.
   Equal container limits do not imply equal per-process heaps.
 - MAZE uses Java 21; subjects and legacy measurement tools use Java 8. Preparation
   records their versions and hashes. The actual image must be archived for exact
@@ -42,11 +43,18 @@ JUGE measures JaCoCo branch outcomes (`conditionsCovered/conditionsTotal`). Use
 raw integer counts rather than rounded percentage strings. A skips mutation;
 its mutation placeholders are not measurements. B uses PIT 1.1.11 default mutators
 with full enumeration, disabling historical half/third sampling on large subjects.
-The effective mutant denominator excludes ignored mutants. Retain generated,
+The effective mutant denominator excludes ignored mutants. Campaigns use a fresh
+Java 8 JVM per mutant, with a 180-second child cap and 3600-second total measurement
+cap. These execution limits differ from legacy JUGE defaults and are applied to
+all tools. JUnit timeout-only/flaky-only failures are ignored consistently even
+when other tests pass. A missing child result or classloading/setup error makes
+the measurement incomplete; it is never an invented kill. Mutated bytecode
+precedes other subject copies on the mutation classpath. Retain generated,
 ignored and effective counts; report denominator differences across runs/tools.
 
 Primary analysis includes measured outcomes and gives zero delivered coverage/kill
-to confirmed generation timeouts and verified successful empty outputs. This is
+to confirmed generator process failures, generation timeouts and verified
+successful empty outputs. This is
 an analysis convention about usable output, not a claim that partial output had
 no coverage. No synthetic mutant or branch counts are assigned to these outcomes.
 Timeout classification requires a JUGE/adapter deadline and matching evidence
@@ -55,7 +63,7 @@ MAZE evidence must match the target, seed, mode and packaged JAR hash. External
 receipts match tool version, target, seed and budget. Empty output requires normal
 completion and configuration/seed checks first.
 
-Infrastructure failures, metric failures, other tool errors of unresolved cause,
+Infrastructure failures, metric failures, tool errors of unresolved cause,
 and missing/corrupt records are not zeroed. They block complete analysis/selection
 until diagnosed. Interrupted attempts remain retryable, not observations.
 Successful-only statistics are explicitly secondary. Both views retain sample
@@ -96,3 +104,32 @@ Run fresh preflights for each frozen environment.
 Record each change or intervention with its date, reason, affected settings,
 validation and disposition of prior attempts in the results' `operator-log.md`.
 Report these details alongside completion counts. Never alter frozen raw evidence.
+
+
+## Stage and retry policy
+
+Generation, coverage and mutation have independent checkpoints. No statistical
+analysis runs during generation. Coverage measurement of A must precede B's
+MAZE generation because it determines the selected strategy. Saved suites are
+measured in fresh working copies; metric failures never trigger regeneration.
+
+The generation deadline follows JUGE's documented twice-budget allowance for
+pre/post-processing, while each generator still receives its nominal internal
+budget. See [JUGE, sections 3.2 and 4.3](https://arxiv.org/pdf/2106.07520).
+The protocol, JaCoCo/PIT metrics and composite-score calculation remain in place.
+Partial output from failed generation is archived but is not substituted into
+primary results. This is a delivered-output policy, not a claim about its latent
+coverage. No generator source is patched to improve completion rates.
+
+A proven container-start failure can be retried once automatically. An ambiguous
+missing receipt cannot. Measurements may be retried once using the identical
+suite; the first complete verified measurement is retained. All attempts survive.
+Explicit user interruption is recorded separately and may be resumed. Unresolved
+cases block a completed campaign rather than being relabelled as tool failures.
+
+Concurrent containers still share caches, memory bandwidth and thermal limits.
+The frozen resource check prevents obvious oversubscription; the target-machine
+rehearsal must establish acceptable contention. Keep the host idle during timed
+generation and report the hardware and concurrency. Measurement also needs
+adequate resources because it executes tests under deadlines. Offline statistics
+have no influence on previously generated suites.

@@ -26,7 +26,7 @@ OUTCOME_POLICY = {
 
 
 def scoreable(record):
-    return record is not None and record['status'] in ('ok', 'tool_timeout', 'empty')
+    return record is not None and record['status'] in ('ok', 'tool_timeout', 'tool_failure', 'empty')
 
 
 def scored(record):
@@ -102,7 +102,7 @@ def valid_record(root, run, manifest_id):
         record = read(root / 'runs' / (run['id'] + '.json'))
         if record.get('record_sha256') != identity({k: v for k, v in record.items() if k != 'record_sha256'}):
             return None
-        if record['run'] != run or record['manifest_id'] != manifest_id or record['status'] not in ('ok', 'excluded', 'tool_timeout', 'empty'):
+        if record['run'] != run or record['manifest_id'] != manifest_id or record['status'] not in ('ok', 'excluded', 'tool_timeout', 'tool_failure', 'empty'):
             return None
         evidence = record['evidence']
         if not evidence or any(digest(root / p) != h for p, h in evidence.items()):

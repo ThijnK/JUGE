@@ -49,7 +49,7 @@ def analyze(root):
     atomic(out / 'availability.json', dict(manifest_id=spec['id'], valid=len(valid), excluded=excluded, missing=missing,
                                          policy=spec['statistics_policy'], outcome_policy=spec.get('outcome_policy'),
                                          scored=len(outcomes), tool_timeout=sum(r['status']=='tool_timeout' for r in outcomes),
-                                         empty=sum(r['status']=='empty' for r in outcomes), units='coverage and kill fractions [0,1]; spread fraction; threshold .10'))
+                                         empty=sum(r['status']=='empty' for r in outcomes), tool_failure=sum(r['status']=='tool_failure' for r in outcomes), units='coverage and kill fractions [0,1]; spread fraction; threshold .10'))
     # Main exports include confirmed tool deadlines/empty outputs as zero outcomes.
     analyze_view([scored(r) for r in outcomes], out)
     secondary = out / 'successful-only'
@@ -65,9 +65,9 @@ def analyze(root):
         key = (row['experiment'], row['subject'], row['budget'], row['treatment'])
         grouped[key][row['status']] += 1
     write_csv(out / 'outcomes.csv', [dict(experiment=k[0], subject=k[1], budget=k[2], treatment=k[3],
-        planned=sum(v.values()), measured=v['ok'], tool_timeout=v['tool_timeout'], empty=v['empty'],
+        planned=sum(v.values()), measured=v['ok'], tool_timeout=v['tool_timeout'], tool_failure=v['tool_failure'], empty=v['empty'],
         unresolved=v['excluded'], pending_or_unverifiable=v['pending_or_unverifiable'],
-        scored=v['ok']+v['tool_timeout']+v['empty']) for k, v in sorted(grouped.items())])
+        scored=v['ok']+v['tool_timeout']+v['tool_failure']+v['empty']) for k, v in sorted(grouped.items())])
     print(f'Wrote {len(flat)} manifest rows to runs.csv; valid={len(valid)}, excluded={len(excluded)}, pending/unverifiable={len(missing)}')
 
 
