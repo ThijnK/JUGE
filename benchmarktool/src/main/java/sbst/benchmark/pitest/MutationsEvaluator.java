@@ -32,7 +32,7 @@ public class MutationsEvaluator {
         MAX_THREAD = parallelism;
     }
 
-    private static final long GLOBAL_TIMEOUT = 600000; // global timeout for
+    private static final long GLOBAL_TIMEOUT = Long.getLong("sbst.benchmark.mutationTimeoutMs", 600000L); // global timeout for
     // mutation analysis
 
     public static final boolean ENABLE_REMOTE_EXECUTION;
@@ -140,9 +140,7 @@ public class MutationsEvaluator {
             writeMutationOnDisk(mu, newCUT);
 
             // change the classpath to consider the new copy of the SUT
-            String newCP = this.classPath.replace(path2SUT, newSUT);
-            // add the mutated CUT to the classpath
-            newCP = newCP + ":" + newCUT;
+            String newCP = mutationClassPath(this.classPath, path2SUT, newSUT, newCUT);
 
             // run the test against the mutated CUT
             List<String> testClasses = new ArrayList<String>();
@@ -152,7 +150,9 @@ public class MutationsEvaluator {
             // TODO Enable this using a switch !
             // Those seems to produce different results ?!
 
-            TestExec4MutationTask executor = (ENABLE_REMOTE_EXECUTION)
+            TestExec4MutationTask executor = Boolean.getBoolean("sbst.benchmark.isolateMutants")
+                    ? new IsolatedTestExec4MutationTask(newCP, testClasses, this.flakyTests, id)
+                    : (ENABLE_REMOTE_EXECUTION)
                     ? new RemoteTestExec4MutationTask(newCP, testClasses, this.flakyTests, id)
                     : new TestExec4MutationTask(newCP, testClasses, this.flakyTests, id);
             // Schedule the execution
@@ -167,7 +167,7 @@ public class MutationsEvaluator {
             // if canceled let's notify printing a file in the result
             // directory
             if (future.isCancelled()) {
-                Main.debug("\n Ignoring mutant for timeout : " + future.get());
+                Main.debug("\n Ignoring mutant because its evaluation was cancelled");
                 this.timeoutReached = true;
                 continue;
             }
@@ -211,11 +211,9 @@ public class MutationsEvaluator {
                             }
                         }
                         if (!killed) {
-                            info = new TestInfo("testClass", "testMethod");
-                            mutationResults.addKilledMutant(coveredMutants.getMutantionDetails(id), info);
-                            // Here we have passing tests AND failing tests?
-                            // throw new RuntimeException("Cannot find the test
-                            // killing Mutant " + id);
+                            // No evidenced killing test: do not fabricate a kill.
+                            this.timeoutReached = true;
+                            break;
                         } else {
                             // Here t
                             break;
@@ -235,6 +233,10 @@ public class MutationsEvaluator {
                 }
 
             } catch (Throwable e) {
+                if (Boolean.getBoolean("sbst.benchmark.isolateMutants")) {
+                    // A missing child result is unknown, not survived or ignored.
+                    this.timeoutReached = true;
+                }
                 e.printStackTrace(Main.infoStr);
                 // TODO Auto-generated catch block
                 if (e instanceof TimeoutException) {
@@ -255,6 +257,12 @@ public class MutationsEvaluator {
         if (dire2remove.exists() && dire2remove.isDirectory()) {
             FileUtils.deleteDirectory(dire2remove);
         }
+    }
+
+    static String mutationClassPath(String original, String sut, String copiedSut, String mutant) {
+        // A tool dependency may contain a second copy of the subject. Always
+        // resolve the mutant before any original classes or generator runtime.
+        return mutant + File.pathSeparator + original.replace(sut, copiedSut);
     }
 
     /**

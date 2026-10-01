@@ -41,8 +41,19 @@ public class TestExec4MutationTask implements Callable<MutationResults> {
     }
 
     MutationResults processTestResults(Result result) {
+        if (result == null) {
+            // StoppingJUnitCore returns no result after a global interruption.
+            // Keep this distinct from a successful execution with no failures.
+            results.setState(State.IGNORED);
+            return results;
+        }
         if (result.getFailures().size() > 0) {
             for (Failure fail : result.getFailures()) {
+                Throwable error = fail.getException();
+                if (error instanceof LinkageError || error instanceof ClassNotFoundException
+                        || error instanceof java.io.FileNotFoundException) {
+                    throw new IllegalStateException("Mutation test infrastructure failed", error);
+                }
                 String header = fail.getTestHeader();
                 if (header.contains("(")) {
                     String testMethod = header.substring(0, header.indexOf('('));
@@ -59,22 +70,10 @@ public class TestExec4MutationTask implements Callable<MutationResults> {
             }
             // If we are here we did not find a killing test !
 
-            if (result.getRunCount() == result.getFailureCount()) {
-                Main.debug("TestExec4MutationTask: All the executed tests triggered timeout. Ignore mutant: "
-                        + results.getMutation_id().hashCode());
-                Main.debug("=======================================");
-                Main.debug("Ignored mutant " + results.getMutation_id());
-                Main.debug("CP " + this.cp);
-                Main.debug("=======================================");
-                results.setState(State.IGNORED);
-                return results;
-            } else {
-                // Some tests triggered timeout other did not
-                Main.debug("TestExec4MutationTask: Only some tests triggered the timeout. Kill the mutant: "
-                        + results.getMutation_id().hashCode());
-                results.setState(State.KILLED);
-                return results;
-            }
+            // No non-flaky, non-timeout failure was found. Passing siblings do
+            // not turn a timeout into a kill. Preserve JUGE's ignored convention.
+            results.setState(State.IGNORED);
+            return results;
         } else {
             /*
              * The mutant survives THIS test so it ran at least once. However,
@@ -119,7 +118,9 @@ public class TestExec4MutationTask implements Callable<MutationResults> {
                 long timeout = 5000;
                 Result result = junit.run(actualTestClasses, timeout, flakyTests);
 
-                results.addJUnitResult(result);
+                if (result != null) {
+                    results.addJUnitResult(result);
+                }
 
                 return processTestResults(result);
 
