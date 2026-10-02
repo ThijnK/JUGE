@@ -32,6 +32,32 @@ class EmptyOutput(ValueError):
     pass
 
 
+def mutation_properties(spec, metrics):
+    policy = spec.get('measurement_policy', {})
+    props = dict(isolateMutants='true', mutationTimeoutMs=str(policy.get('total_seconds', 3600) * 1000),
+                 mutationEvidence=str(metrics / 'mutation-isolation'))
+    if policy.get('version', 2) < 3:
+        return dict(props, mutantProcessTimeoutMs='180000')
+    child = policy['child_budget']
+    if child['policy'] != 'suite-v1' or child['default_test_timeout_seconds'] != 5:
+        raise ValueError('Unsupported frozen mutation budget policy')
+    return dict(props, mutantProcessTimeoutPolicy=child['policy'],
+                mutantProcessTimeoutMinMs=str(child['minimum_seconds'] * 1000),
+                mutantStartupAllowanceMs=str(child['startup_seconds'] * 1000),
+                mutantClassAllowanceMs=str(child['fixture_seconds_per_class'] * 1000))
+
+
+def resource_counters(root=Path('/sys/fs/cgroup')):
+    """Read available cgroup v1/v2 evidence before Docker removes the container."""
+    paths = {'memory-events.txt': 'memory.events', 'memory.peak': 'memory.peak', 'cpu.stat': 'cpu.stat'}
+    if not (root / 'memory.events').exists():
+        paths = {'memory-oom-control.txt': 'memory/memory.oom_control',
+                 'memory.peak': 'memory/memory.max_usage_in_bytes',
+                 'memory.failcnt': 'memory/memory.failcnt',
+                 'cpu.stat': 'cpu/cpu.stat', 'cpuacct.usage': 'cpuacct/cpuacct.usage'}
+    return {name: (root / path).read_text() for name, path in paths.items() if (root / path).exists()}
+
+
 def confirmed_timeout(generation, row, definition, jar_sha):
     """Return a deadline reason only with matching evidence that the tool ran."""
     target = 'nl.uu.maze.benchmarks.' + row['subject']
@@ -98,8 +124,7 @@ def run_one(root, row, attempt, phase="all", generation_record=None):
              'pitest': str(libs / 'pitest-1.1.11.jar') + ':' + str(libs / 'pitest-command-line-1.1.11.jar'),
              'skipMutation': str(row['experiment'] == 'A' or phase == 'coverage').lower(), 'allMutants': 'true'}
     if spec.get('campaign'):
-        props.update(isolateMutants='true', mutationTimeoutMs='3600000', mutantProcessTimeoutMs='180000',
-                     mutationEvidence=str(metrics / 'mutation-isolation'))
+        props.update(mutation_properties(spec, metrics))
     command = ['/opt/java8/bin/java', '-Xmx1500m', '-ea'] + ['-Dsbst.benchmark.' + k + '=' + str(v) for k, v in props.items()] + ['-jar', str(libs / 'runner.jar')]
     commands = []
 
@@ -117,14 +142,13 @@ def run_one(root, row, attempt, phase="all", generation_record=None):
         result['finished_at'] = time.time()
         result['wall_seconds'] = result['finished_at'] - result['started_at']
         result['phase'] = phase
-        memory_events = Path('/sys/fs/cgroup/memory.events')
-        if memory_events.exists():
-            result['memory_events'] = memory_events.read_text()
-            (work / 'memory-events.txt').write_text(result['memory_events'])
-        for counter in ('memory.peak', 'cpu.stat'):
-            source = Path('/sys/fs/cgroup') / counter
-            if source.exists():
-                (work / counter).write_text(source.read_text())
+        counters = resource_counters()
+        if 'memory-events.txt' in counters:
+            result['memory_events'] = counters['memory-events.txt']
+        if 'memory-oom-control.txt' in counters:
+            result['memory_oom_control'] = counters['memory-oom-control.txt']
+        for name, value in counters.items():
+            (work / name).write_text(value)
         result['evidence'] = {str((work / name).relative_to(root)): sha for name, sha in fingerprint(work).items()}
         atomic(work / 'result.json', result)
         return result
@@ -220,8 +244,12 @@ def run_one(root, row, attempt, phase="all", generation_record=None):
         if code:
             raise ValueError('metrics_process_failed')
         text = logs(metrics)
-        if list(metrics.rglob('TIMEOUT.txt')) or 'Evaluation not completed ignore it' in text:
+        if list(metrics.rglob('MUTATION_ERROR.txt')):
+            raise ValueError('juge_mutation_error')
+        if list(metrics.rglob('TIMEOUT.txt')):
             raise ValueError('juge_mutation_timeout')
+        if 'Evaluation not completed ignore it' in text:
+            raise ValueError('juge_mutation_incomplete')
         if 'Could not calculate coverage metrics!' in text:
             raise ValueError('coverage_failed')
         if row['experiment'] == 'B' and phase != 'coverage' and ('Could not calculate mutation metrics!' in text or not list(metrics.rglob('mutation_results.txt'))):

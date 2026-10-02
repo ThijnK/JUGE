@@ -7,7 +7,7 @@ mkdir -p "$out/lib"
 for artifact in evosuite-1.2.0 evosuite-standalone-runtime-1.2.0; do
     curl -fL --retry 3 "https://github.com/EvoSuite/evosuite/releases/download/v1.2.0/$artifact.jar" -o "$out/lib/$artifact.jar"
 done
-python3 - "$out" <<'PY'
+"${JUGE_PROVISION_PYTHON:-python3}" - "$out" <<'PY'
 import hashlib, pathlib, sys
 root = pathlib.Path(sys.argv[1])
 expected = {'evosuite-1.2.0.jar': '0bc0062fdec70c35089ad736c9b88ccf87308c2f0aaaafe43176f3c4a89ddeba',

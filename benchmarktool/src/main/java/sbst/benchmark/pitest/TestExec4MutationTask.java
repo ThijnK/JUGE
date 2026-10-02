@@ -6,6 +6,7 @@ import org.pitest.mutationtest.engine.MutationIdentifier;
 import sbst.benchmark.Main;
 import sbst.benchmark.coverage.TestUtil;
 import sbst.benchmark.junit.StoppingJUnitCore;
+import sbst.benchmark.junit.NonKillingFailure;
 import sbst.benchmark.pitest.MutationResults.State;
 
 import java.io.IOException;
@@ -48,19 +49,23 @@ public class TestExec4MutationTask implements Callable<MutationResults> {
             return results;
         }
         if (result.getFailures().size() > 0) {
+            // Check every reported failure, even if an earlier assertion kills.
             for (Failure fail : result.getFailures()) {
                 Throwable error = fail.getException();
-                if (error instanceof LinkageError || error instanceof ClassNotFoundException
+                if ("initializationError".equals(fail.getDescription().getMethodName())
+                        || error instanceof LinkageError || error instanceof ClassNotFoundException
                         || error instanceof java.io.FileNotFoundException) {
                     throw new IllegalStateException("Mutation test infrastructure failed", error);
                 }
+            }
+            for (Failure fail : result.getFailures()) {
                 String header = fail.getTestHeader();
                 if (header.contains("(")) {
                     String testMethod = header.substring(0, header.indexOf('('));
                     String tc = header.substring(header.indexOf('(') + 1, header.length());
                     TestInfo info = new TestInfo(tc, testMethod);
                     if (!this.flakyTests.contains(info)
-                            && !fail.getTrace().contains("java.lang.Exception: test timed out after")) {
+                            && !NonKillingFailure.isNonKilling(fail)) {
                         Main.debug("TestExec4MutationTask: Mutant " + results.getMutation_id() + " killed by test "
                                 + info);
                         results.setState(State.KILLED);

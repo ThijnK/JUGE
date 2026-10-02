@@ -14,8 +14,9 @@ import time
 import uuid
 
 from common import atomic, digest, fingerprint, identity, read, selection, valid_record
-from bench import lock, manifest, verify_environment
+from bench import lock, manifest, prepare_validation, verify_environment
 from progress import ProgressReporter
+from host import check_capacity, container_user
 
 GENERATION_OUTCOMES = {'generated', 'empty', 'tool_timeout', 'tool_failure'}
 ZERO_OUTCOMES = GENERATION_OUTCOMES - {'generated'}
@@ -58,17 +59,14 @@ def docker_json(*args):
 def capacity(spec):
     info = docker_json('info', '--format', '{{json .}}')
     config = spec['campaign']
-    jobs = max(config['generation_jobs'], config['measurement_jobs'])
-    needed_memory = jobs * config['memory_gb'] * 1024**3 + 1024**3
-    if jobs * config['cpus'] > info['NCPU'] or needed_memory > info['MemTotal']:
-        raise ValueError('Frozen concurrency exceeds Docker resources (including 1 GiB headroom). Prepare with fewer jobs or allocate more VM resources.')
+    check_capacity(info, config)
     return dict(cpus=info['NCPU'], memory_bytes=info['MemTotal'], server_version=info['ServerVersion'],
                 architecture=info['Architecture'], operating_system=info['OperatingSystem'])
 
 
 def command(root, spec, active):
     c = spec['campaign']
-    cmd = ['docker', 'run', '--platform', 'linux/amd64', '--init', '--name', active['container'],
+    cmd = ['docker', 'run', '--platform', 'linux/amd64', '--init', *container_user(), '--name', active['container'],
            '--cpus=' + str(c['cpus']), '--memory=' + str(c['memory_gb']) + 'g',
            '--memory-swap=' + str(c['memory_gb']) + 'g', '--network=none',
            '-e', 'PYTHONDONTWRITEBYTECODE=1', '-e', 'JDK_JAVA_OPTIONS=-Xmx2500m',
@@ -315,14 +313,8 @@ def main():
         if args.command == 'rehearse':
             parent = root
             root = parent / 'rehearsal-data'
-            root.mkdir(exist_ok=True)
+            prepare_validation(parent, root, spec)
             (root / 'STOP').unlink(missing_ok=True)
-            for folder in ('env', 'suite'):
-                if not (root / folder).exists():
-                    shutil.copytree(parent / folder, root / folder)
-            if not (root / 'manifest.json').exists():
-                atomic(root / 'manifest.json', spec)
-            verify_environment(root, spec)
             atomic(root / 'selection.json', dict(manifest_id=spec['id'], treatment='BFS', purpose='rehearsal'))
             reconcile(root, spec)
             rows = [r for r in spec['runs'] if r['repetition'] == 1 and (

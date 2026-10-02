@@ -12,6 +12,12 @@ BASE = ['DFS', 'BFS', 'SGS', 'RPS', 'COS', 'FOS']
 TREATMENTS = BASE + ['FOS+COS']
 OPTIONS = ['--minimization=true', '--max-depth=400', '--max-replay-steps=10000', '--max-array-size=10', '--path-length-coverage=0', '--target-path-aging=0', '--constrain-fp-params-to-normal-numbers=true', '--check-division-by-zero=true']
 
+MEASUREMENT_POLICY = dict(version=3, isolated_mutants=True, total_seconds=3600,
+    child_budget=dict(policy='suite-v1', minimum_seconds=180, startup_seconds=30,
+                      fixture_seconds_per_class=10, default_test_timeout_seconds=5),
+    non_killing='evidenced JUnit timeout/interruption-only or flaky-only failures: ignored; passing siblings do not imply survival',
+    incomplete='missing/null child results, process deadlines, classloading/setup errors: unresolved')
+
 
 OUTCOME_POLICY = {
     'version': 1,

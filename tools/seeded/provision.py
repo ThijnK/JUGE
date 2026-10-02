@@ -2,11 +2,15 @@
 """Build the common image and provision pinned upstream tools for AST 2027."""
 import argparse
 import json
+import os
 from pathlib import Path
 import subprocess
+import sys
 
 HERE = Path(__file__).resolve().parent
 JUGE = HERE.parents[1]
+sys.path.insert(0, str(JUGE / 'experiments/ast2027'))
+from host import inspect_host
 
 
 def definitions(root):
@@ -26,16 +30,21 @@ def main():
     root = args.output.resolve()
     if root.exists():
         raise SystemExit('Use a fresh output directory; existing provisioned tools are never overwritten.')
+    host = inspect_host(root, dict(generation_jobs=1,measurement_jobs=1,cpus=2,memory_gb=4))
     root.mkdir(parents=True)
+    (root / 'host-machine.json').write_text(json.dumps(host, indent=2) + '\n')
+    cache = JUGE / 'local/ast2027-maven'
+    cache.mkdir(parents=True, exist_ok=True)
+    env = dict(os.environ, AST2027_MAVEN_CACHE=str(cache), JUGE_PROVISION_PYTHON=sys.executable)
     commands = [
         ['docker', 'build', '--platform', 'linux/amd64', '-t', 'maze-ast2027:amd64', '-f', str(JUGE / 'experiments/ast2027/Dockerfile'), str(JUGE)],
         ['sh', str(HERE / 'evosuite/provision.sh'), str(root / 'evosuite')],
         ['sh', str(HERE / 't3/provision.sh'), str(root / 't3')],
-        ['python3', str(HERE / 'kex/fetch.py'), str(root / 'kex')]]
+        [sys.executable, str(HERE / 'kex/fetch.py'), str(root / 'kex')]]
     with (root / 'provision.log').open('w') as log:
         for command in commands:
             print('Running: ' + ' '.join(command), flush=True)
-            subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True)
+            subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True, env=env)
     (root / 'tools.json').write_text(json.dumps(definitions(root), indent=2) + '\n')
     print('Ready: ' + str(root / 'tools.json'))
 

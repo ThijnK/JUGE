@@ -39,15 +39,36 @@ public class IsolatedTestExec4MutationTask extends TestExec4MutationTask {
                 data.writeUTF(test.testMethod);
             }
         }
+        long limit = Long.getLong("sbst.benchmark.mutantProcessTimeoutMs", 180000L);
+        if ("suite-v1".equals(System.getProperty("sbst.benchmark.mutantProcessTimeoutPolicy"))) {
+            try (URLClassLoader loader = URLClassLoader.newInstance(urls, getClass().getClassLoader())) {
+                List<Class<?>> classes = new ArrayList<>();
+                for (String test : testClasses) {
+                    if (test.contains("_scaffolding") || test.contains("ReflectionUtils") || test.contains("EqualityUtils")) {
+                        continue;
+                    }
+                    classes.add(Class.forName(test.startsWith("testcases.") ? test.substring(10) : test, false, loader));
+                }
+                MutationBudget.Plan plan = MutationBudget.inspect(classes,
+                        Long.getLong("sbst.benchmark.mutantStartupAllowanceMs", 30000L),
+                        Long.getLong("sbst.benchmark.mutantClassAllowanceMs", 10000L),
+                        Long.getLong("sbst.benchmark.mutantProcessTimeoutMinMs", 180000L),
+                        Long.getLong("sbst.benchmark.mutationTimeoutMs", 3600000L));
+                limit = plan.limitMs;
+                try (PrintWriter budget = new PrintWriter(new File(evidence, "budget.json"))) {
+                    budget.printf(Locale.ROOT, "{\"policy\":\"suite-v1\",\"test_classes\":%d,\"test_methods\":%d,\"test_timeouts_ms\":%d,\"child_limit_ms\":%d}%n",
+                            plan.classes, plan.tests, plan.testTimeoutsMs, plan.limitMs);
+                }
+            }
+        }
         String java = Main.JAVA == null ? System.getProperty("java.home") + "/bin/java" : Main.JAVA;
         Process process = new ProcessBuilder(java, "-Xmx1500m", "-ea", "-cp",
                 cp + File.pathSeparator + System.getProperty("java.class.path"),
                 IsolatedTestExec4MutationTask.class.getName(), input.getAbsolutePath(), output.getAbsolutePath())
                 .redirectErrorStream(true).redirectOutput(new File(evidence, "process.log")).start();
         try {
-            long limit = Long.getLong("sbst.benchmark.mutantProcessTimeoutMs", 180000L);
             if (!process.waitFor(limit, TimeUnit.MILLISECONDS)) {
-                throw new IOException("Isolated mutant exceeded " + limit + " ms: " + evidence);
+                throw new DeadlineException("Isolated mutant exceeded " + limit + " ms: " + evidence);
             }
             if (process.exitValue() != 0 || !output.isFile()) {
                 throw new IOException("Isolated mutant did not return a result: " + evidence);
@@ -67,12 +88,18 @@ public class IsolatedTestExec4MutationTask extends TestExec4MutationTask {
                      }
                  }) {
                 result = (Result) data.readObject();
+                if (result == null) {
+                    throw new IOException("Isolated mutant returned an interrupted JUnit result: " + evidence);
+                }
+                // Rendering a generated exception can lazily load tool runtime classes.
+                // Cache every trace while this loader is open, including failures that
+                // the first killing test would otherwise leave unprocessed.
+                for (int i = 0; i < result.getFailures().size(); i++) {
+                    result.getFailures().set(i, new RenderedFailure(result.getFailures().get(i)));
+                }
+                results.addJUnitResult(result);
+                return processTestResults(result);
             }
-            if (result == null) {
-                throw new IOException("Isolated mutant returned an interrupted JUnit result: " + evidence);
-            }
-            results.addJUnitResult(result);
-            return processTestResults(result);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("Isolated mutant evaluation interrupted: " + evidence, e);
@@ -83,6 +110,27 @@ public class IsolatedTestExec4MutationTask extends TestExec4MutationTask {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+        }
+    }
+
+    public static final class DeadlineException extends IOException {
+        private static final long serialVersionUID = 1L;
+        DeadlineException(String message) {
+            super(message);
+        }
+    }
+
+    private static final class RenderedFailure extends org.junit.runner.notification.Failure {
+        private static final long serialVersionUID = 1L;
+        private final String trace;
+
+        RenderedFailure(org.junit.runner.notification.Failure failure) {
+            super(failure.getDescription(), failure.getException());
+            trace = failure.getTrace();
+        }
+
+        @Override public String getTrace() {
+            return trace;
         }
     }
 
@@ -110,7 +158,7 @@ public class IsolatedTestExec4MutationTask extends TestExec4MutationTask {
                     flaky.add(new TestInfo(data.readUTF(), data.readUTF()));
                 }
             }
-            Result result = new StoppingJUnitCore().run(classes, 5000, flaky);
+            Result result = new StoppingJUnitCore().run(classes, MutationBudget.DEFAULT_TEST_TIMEOUT_MS, flaky);
             if (result != null) {
                 for (org.junit.runner.notification.Failure failure : result.getFailures()) {
                     System.out.println(failure.getTestHeader());

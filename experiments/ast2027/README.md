@@ -11,6 +11,30 @@ checkout and results in the WSL Linux filesystem, not `/mnt/c`. All containers
 use Linux AMD64; a Ryzen desktop executes this architecture without ARM emulation.
 Read [methodology](docs/methodology.md) before interpreting results.
 
+On WSL/Linux, containers use the invoking user's UID/GID so evidence stays readable.
+From Windows PowerShell, enter your usual WSL user terminal:
+
+```powershell
+wsl.exe -d Ubuntu
+```
+
+Use a Python 3.9+ interpreter for all host commands. If Ubuntu's system Python is
+older, use a separate installation or virtual environment instead of replacing
+the system interpreter. Check Docker availability inside that same WSL terminal.
+Run the read-only prerequisite check before provisioning/preparation:
+
+```sh
+python3 experiments/ast2027/host.py --directory "$PWD/results/ast2027" \
+  --generation-jobs 1 --measurement-jobs 1 --cpus 2 --memory-gb 4
+```
+
+Preparation checks these prerequisites automatically and saves `host-machine.json`
+with Python, hardware, actual Docker capacity/context, filesystem, competing
+processes and, on WSL, Windows/WSL and power settings. The manifest hashes this
+record. Review unavailable fields and record interventions in `operator-log.md`.
+The running Docker engine's capacity governs the resource check. Host installation
+and power/VM configuration changes remain explicit operator actions.
+
 ## Prepare
 
 Preparation downloads the published Linux AMD64 MAZE 1.2.3 distribution and
@@ -61,6 +85,11 @@ HeapSort/DFS, all four tools on BinarySearch, and T3 StringPatternMatcher using
 the frozen concurrency. No preflight or rehearsal observations enter production.
 Reference cases must yield measured results; confirmed tool failures on stress
 cases are acceptable, but unresolved measurement/infrastructure errors are not.
+
+Mutation children use a suite-size allowance with a 180-second minimum, bounded
+by the unchanged 3600-second total measurement cap. The formula and timeout
+interpretation are in [methodology](docs/methodology.md); per-child `budget.json`
+preserves the calculation. Generated engines and test timeouts are unchanged.
 
 `run` performs A generation, A coverage, B generation, B coverage, then B mutation.
 It selects the MAZE configuration after A coverage, using the frozen selection
@@ -137,8 +166,12 @@ terminal outcomes, not reasons to seek another generated suite. Measurement may
 retry once against the identical saved suite. Every attempt retains its evidence;
 remaining errors require diagnosis and are never silently scored zero. The runner
 captures Docker exit/OOM state before removing containers, and workers save
-available cgroup memory/CPU counters. No monitoring agent is required to execute
+available cgroup v1/v2 OOM, memory-peak and CPU counters. No monitoring agent is required to execute
 the queue; launch it in a persistent terminal/session if closing its parent shell.
+
+Mutation setup failures are recorded in `MUTATION_ERROR.txt`; actual deadlines
+in `TIMEOUT.txt`, with the affected mutant and cause. Both remain unresolved.
+See the methodology for timeout/interruption and ignored-mutant interpretation.
 
 ## Analyze and archive
 
@@ -160,16 +193,27 @@ provenance. Original generation artifacts are never used as writable measurement
 workspaces. Archive the complete directory because dependencies are shared through
 relative symlinks. `local/` and `results/` are ignored by Git.
 
-Stop writers, save the image, then archive the directory:
+Stop writers, save the image, then archive the directory. In Bash, use unique
+names and fail on export/compression errors:
 
 ```sh
-IMAGE=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["image_tag"])' "$RESULTS/manifest.json")
-docker image save "$IMAGE" | gzip > "$RESULTS/container-image.tar.gz"
-tar -czf ast2027-results.tar.gz -C "$(dirname "$RESULTS")" "$(basename "$RESULTS")"
-shasum -a 256 ast2027-results.tar.gz > ast2027-results.tar.gz.sha256
+(
+  set -euo pipefail
+  IMAGE=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["image_tag"])' "$RESULTS/manifest.json")
+  IMAGE_TMP=$(mktemp "$RESULTS/container-image-XXXXXXXX.tar.gz.partial")
+  docker image save "$IMAGE" | gzip > "$IMAGE_TMP"
+  gzip -t "$IMAGE_TMP"
+  mv "$IMAGE_TMP" "${IMAGE_TMP%.partial}"
+  ARCHIVE_DIR=$(mktemp -d "$(dirname "$RESULTS")/ast2027-archive-XXXXXXXX")
+  tar -czf "$ARCHIVE_DIR/ast2027-results.tar.gz" -C "$(dirname "$RESULTS")" "$(basename "$RESULTS")"
+  tar -tzf "$ARCHIVE_DIR/ast2027-results.tar.gz" > /dev/null
+  (cd "$ARCHIVE_DIR" && shasum -a 256 ast2027-results.tar.gz > ast2027-results.tar.gz.sha256)
+  printf 'Verified archive: %s\n' "$ARCHIVE_DIR/ast2027-results.tar.gz"
+)
 ```
 
-Publish the archive and identify both source revisions and the engine archive hash.
+Back up the verified archive before deleting any working data. Publish the archive
+and identify both source revisions and the engine archive hash.
 To reanalyze elsewhere, extract it, load the saved Docker image and use its copied
 `bench.py analyze`. Seeds cannot make wall-clock-limited generation identical
 across hardware. Historical sequential campaigns retain their own frozen scripts;

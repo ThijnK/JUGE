@@ -15,7 +15,8 @@ import sys
 import time
 import uuid
 
-from common import OUTCOME_POLICY, SUBJECTS, atomic, digest, fingerprint, identity, matrix, read, selection, valid_record
+from common import MEASUREMENT_POLICY, OUTCOME_POLICY, SUBJECTS, atomic, digest, fingerprint, identity, matrix, read, selection, valid_record
+from host import container_user, inspect_host
 
 HERE = Path(__file__).resolve().parent
 JUGE = HERE.parent.parent
@@ -41,7 +42,7 @@ def docker(root, image, extra=()):
     config = read(root / 'manifest.json').get('campaign', {}) if (root / 'manifest.json').exists() else {}
     cpus = config.get('cpus', 2)
     memory = str(config.get('memory_gb', 4)) + 'g'
-    return ['docker', 'run', '--platform', PLATFORM, '--rm', '--init', '--cpus=' + str(cpus), '--memory=' + memory, *(['--memory-swap=' + memory] if config else []), '--network=none',
+    return ['docker', 'run', '--platform', PLATFORM, '--rm', '--init', *container_user(), '--cpus=' + str(cpus), '--memory=' + memory, *(['--memory-swap=' + memory] if config else []), '--network=none',
             '-e', 'PYTHONDONTWRITEBYTECODE=1', '-e', 'JDK_JAVA_OPTIONS=-Xmx2500m',
             '-v', str(root) + ':/results', '-v', str(root / 'env') + ':/results/env:ro',
             '-v', str(root / 'suite') + ':/suite:ro',
@@ -67,6 +68,9 @@ def manifest(root):
 def verify_environment(root, spec):
     if fingerprint(root / 'env') != spec['environment'] or fingerprint(root / 'suite') != spec['suite']:
         raise SystemExit('Frozen environment or runner changed: restore it or prepare a new directory.')
+    host_record = spec.get('host_record')
+    if host_record and digest(root / host_record['path']) != host_record['sha256']:
+        raise SystemExit('Preparation machine record changed; retain the original audit record.')
 
 
 def progress(root, spec, verify=True):
@@ -86,6 +90,20 @@ def progress(root, spec, verify=True):
     return dict(experiments={e: dict(v) for e, v in counts.items()}, exclusions=dict(reasons), stop_requested=(root / 'STOP').exists())
 
 
+def prepare_validation(parent, root, spec):
+    """Copy frozen inputs and audit metadata without importing observations."""
+    root.mkdir(exist_ok=True)
+    for folder in ('env', 'suite'):
+        if not (root / folder).exists():
+            shutil.copytree(parent / folder, root / folder)
+    host_record = spec.get('host_record')
+    if host_record and not (root / host_record['path']).exists():
+        shutil.copy2(parent / host_record['path'], root / host_record['path'])
+    if not (root / 'manifest.json').exists():
+        atomic(root / 'manifest.json', spec)
+    verify_environment(root, spec)
+
+
 def remove_container(name):
     result = subprocess.run(['docker', 'rm', '-f', name], capture_output=True, text=True, timeout=20)
     if result.returncode != 0 and 'No such container' not in result.stderr:
@@ -98,6 +116,9 @@ def prepare(args, root):
     if (root / 'manifest.json').exists() or (root / 'env').exists():
         raise SystemExit('Prepare requires a fresh directory. Existing data are never overwritten.')
     juge = JUGE
+    config = dict(generation_jobs=args.generation_jobs, measurement_jobs=args.measurement_jobs,
+                  cpus=args.cpus, memory_gb=args.memory_gb)
+    atomic(root / 'host-machine.json', inspect_host(root, config))
     # Fail before builds if the required controls were not applied to this fork.
     for path, needle in [('benchmarktool/src/main/java/sbst/benchmark/TestSuite.java', 'sbst.benchmark.skipMutation'),
                          ('benchmarktool/src/main/java/sbst/benchmark/pitest/PITWrapper.java', 'sbst.benchmark.allMutants')]:
@@ -111,9 +132,12 @@ def prepare(args, root):
     image_tag = 'maze-ast2027-frozen:' + uuid.uuid4().hex
     subprocess.run(['docker', 'image', 'tag', image, image_tag], check=True)
     shutil.copytree(HERE, root / 'suite', ignore=shutil.ignore_patterns('__pycache__'))
-    command = ['docker', 'run', '--platform', PLATFORM, '--rm', '--init', '--cpus=2', '--memory=4g',
-               '-v', str(juge) + ':/juge', '-v', str(root) + ':/results',
-               '-v', 'maze-ast2027-maven:/root/.m2', image, 'sh', '/results/suite/prepare.sh']
+    cache = juge / 'local/ast2027-maven'
+    cache.mkdir(parents=True, exist_ok=True)
+    command = ['docker', 'run', '--platform', PLATFORM, '--rm', '--init', *container_user(), '--cpus=2', '--memory=4g', '--memory-swap=4g',
+               '-e', 'MAVEN_OPTS=-Dmaven.repo.local=/maven',
+               '-v', str(juge) + ':/juge:ro', '-v', str(root) + ':/results',
+               '-v', str(cache) + ':/maven', '-w', '/results', image, 'sh', '/results/suite/prepare.sh']
     if args.maze_package:
         package = Path(args.maze_package).resolve()
         shutil.copy2(package, root / 'maze-package.tar.gz')
@@ -128,8 +152,15 @@ def prepare(args, root):
         repositories[name] = {'commit': checked(['git', 'rev-parse', 'HEAD'], cwd=directory),
                               'status': checked(['git', 'status', '--short'], cwd=directory)}
         # Save relevant source differences as provenance, never environment files.
-        diff = checked(['git', 'diff', 'HEAD', '--', 'src', 'benchmarktool', 'maze_runtool'], cwd=directory)
+        paths = ['src', 'benchmarktool', 'maze_runtool', 'experiments/ast2027', 'tools/seeded']
+        diff = checked(['git', 'diff', 'HEAD', '--', *paths], cwd=directory) + '\n'
+        for filename in checked(['git','ls-files','--others','--exclude-standard','--',*paths],cwd=directory).splitlines():
+            addition = subprocess.run(['git','diff','--no-index','--','/dev/null',filename],cwd=directory,capture_output=True,text=True)
+            if addition.returncode != 1:
+                raise SystemExit('Cannot snapshot new source file: ' + filename)
+            diff += addition.stdout
         (root / (name + '-source.patch')).write_text(diff + '\n')
+        repositories[name]['patch_sha256'] = digest(root / (name + '-source.patch'))
     external = {}
     if args.tools:
         definitions = read(Path(args.tools))
@@ -148,6 +179,7 @@ def prepare(args, root):
             external[name] = {k: v for k, v in definition.items() if k != 'directory'}
     atomic(root / 'env/tools.json', external)
     spec = dict(schema=2, outcome_policy=OUTCOME_POLICY, image=image, image_tag=image_tag, execution_platform=PLATFORM, created_at=time.time(), host={'name': platform.node(), 'architecture': platform.machine(), 'platform': platform.platform()},
+                host_record=dict(path='host-machine.json', sha256=digest(root / 'host-machine.json')),
                 repositories=repositories, environment=fingerprint(root / 'env'), suite=fingerprint(root / 'suite'),
                 b_repetitions=args.b_repetitions, purpose=args.purpose, runs=matrix(args.b_repetitions),
                 resources=dict(cpus=2, container_memory='4g', maze_jvm_heap='2500m', juge_jvm_heap='1500m', a_watchdog_seconds=300, b_watchdog_seconds=1800),
@@ -159,7 +191,8 @@ def prepare(args, root):
                                 generation_retry='only proven container startup failure; at most one retry',
                                 measurement_retry='at most one retry of the same saved suite',
                                 partial_output='retained; failed generation scores zero',
-                                mutation='isolated JVM; 180s per child, 3600s total; timeout-only mutants ignored')
+                                mutation='isolated JVM; suite-size child allowance, 3600s total; timeout/interruption-only mutants ignored')
+        spec['measurement_policy'] = MEASUREMENT_POLICY
         spec['outcome_policy'] = dict(OUTCOME_POLICY, version=2, tool_failure='confirmed generator failure: zero delivered effectiveness')
         spec['resources'].update(cpus=args.cpus, container_memory=str(args.memory_gb)+'g', b_watchdog_seconds=4200)
         random.Random(2027).shuffle(spec['runs'])
@@ -249,13 +282,7 @@ def run(args, root, spec):
         # Preflight records never enter the production matrix or change its order.
         parent = root
         root = parent / ('preflight-data' if args.experiment == 'A' else 'preflight-B-data')
-        root.mkdir(exist_ok=True)
-        for folder in ('env', 'suite'):
-            if not (root / folder).exists():
-                shutil.copytree(parent / folder, root / folder)
-        if not (root / 'manifest.json').exists():
-            atomic(root / 'manifest.json', spec)
-        verify_environment(root, spec)
+        prepare_validation(parent, root, spec)
         # An explicit smoke command resumes a stopped preflight.
         (control_root / 'STOP').unlink(missing_ok=True)
         (root / 'STOP').unlink(missing_ok=True)

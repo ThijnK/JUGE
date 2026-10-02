@@ -19,12 +19,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 // For very large number of test classes this might not work as you can not easily specify tons of inputs on the commandline !
 public class StoppingJUnitCore {
-
-    final AtomicBoolean globalTimeout = new AtomicBoolean(false);
 
     class StoppingListener extends RunListener {
         private RunNotifier runNotifier = null;
@@ -58,16 +55,13 @@ public class StoppingJUnitCore {
                     return;
                 } else
                     // If the failed test is a timeout
-                    if (failure.getTrace().contains("java.lang.Exception: test timed out after")) {
+                    if (NonKillingFailure.isNonKilling(failure)) {
                         // Keep going
-                        Main.debug("\t timeout test, ignore !");
-                        listener.testAssumptionFailure(failure);
-                    } else if (failure.getException() instanceof InterruptedException) {
-                        // Keep going
-                        Main.debug(
-                                "\t test execution reached (probably GLOABL timeout), will stop test execution but do not report killing test !");
-                        globalTimeout.set(true);
-                        runNotifier.pleaseStop();
+                        Main.debug("\t interrupted/timeout test, retain as non-killing failure");
+                        // Keep the evidence when an eventual killing failure stops JUnit.
+                        // A generated replay thread can interrupt JUnit; this is not
+                        // evidence that the outer coordinator requested a stop.
+                        listener.testFailure(failure);
                     } else {
                         Main.debug("\t actual test, will stop test execution !");
                         listener.testFailure(failure);
@@ -175,16 +169,10 @@ public class StoppingJUnitCore {
             // If no tests fail, this will return the Result object
             return junit.run(testClasses.toArray(new Class[]{}));
         } catch (StoppedByUserException e) {
-            // If this is triggered because of global timeout we should not
-            // report any result !
-            if (globalTimeout.get()) {
-                Main.info("Global timeout reached while executing tests.");
-                return null;
-            } else {
-                // If a test failed we forced JUnitCore to stop. So we need to
-                // "recreate" a suitable Result object
-                return theResult;
-            }
+            // Only an evidenced killing failure asks this notifier to stop.
+            // External campaign interruption stops the disposable child process;
+            // it cannot be inferred from a generated test's InterruptedException.
+            return theResult;
         } catch (Throwable t) {
             Main.info("Failed Test execution with JUNIT CORE: ");
             t.printStackTrace(Main.infoStr);

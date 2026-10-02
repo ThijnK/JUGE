@@ -3,6 +3,7 @@ package sbst.benchmark.pitest;
 import org.apache.commons.io.FileUtils;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
+import sbst.benchmark.junit.NonKillingFailure;
 import org.pitest.mutationtest.engine.MutationIdentifier;
 import sbst.benchmark.Main;
 import sbst.benchmark.TestSuite;
@@ -58,6 +59,15 @@ public class MutationsEvaluator {
     private Set<TestInfo> flakyTests;
 
     private boolean timeoutReached = false;
+    private boolean deadlineReached = false;
+    private final List<String> incompleteReasons = new ArrayList<String>();
+
+    private void incomplete(String reason, boolean deadline) {
+        timeoutReached = true;
+        deadlineReached |= deadline;
+        incompleteReasons.add(reason);
+        Main.info("Incomplete mutation measurement: " + reason);
+    }
 
     /**
      * Build the infrastructure to run the generated tests against the mutations
@@ -163,12 +173,14 @@ public class MutationsEvaluator {
         List<Future<MutationResults>> all = service.invokeAll(task_list, GLOBAL_TIMEOUT, TimeUnit.MILLISECONDS);
         service.shutdown();
 
-        for (Future<MutationResults> future : all) {
+        for (int index = 0; index < all.size(); index++) {
+            Future<MutationResults> future = all.get(index);
+            MutationIdentifier expectedId = task_list.get(index).results.getMutation_id();
             // if canceled let's notify printing a file in the result
             // directory
             if (future.isCancelled()) {
                 Main.debug("\n Ignoring mutant because its evaluation was cancelled");
-                this.timeoutReached = true;
+                incomplete("total measurement deadline; mutant=" + expectedId, true);
                 continue;
             }
 
@@ -190,8 +202,7 @@ public class MutationsEvaluator {
 
                                 String header = fail.getTestHeader();
                                 // Skip results that have to be ignored anyway
-                                if (fail.getTrace().contains("java.lang.Exception: test timed out after")
-                                        || fail.getTrace().contains("java.io.FileNotFoundException")) {
+                                if (NonKillingFailure.isNonKilling(fail)) {
                                     Main.debug("\n Discard test execution");
                                     continue;
                                 }
@@ -212,7 +223,7 @@ public class MutationsEvaluator {
                         }
                         if (!killed) {
                             // No evidenced killing test: do not fabricate a kill.
-                            this.timeoutReached = true;
+                            incomplete("missing evidenced killing test; mutant=" + id, false);
                             break;
                         } else {
                             // Here t
@@ -235,7 +246,10 @@ public class MutationsEvaluator {
             } catch (Throwable e) {
                 if (Boolean.getBoolean("sbst.benchmark.isolateMutants")) {
                     // A missing child result is unknown, not survived or ignored.
-                    this.timeoutReached = true;
+                    Throwable cause = e instanceof ExecutionException ? e.getCause() : e;
+                    boolean deadline = cause instanceof IsolatedTestExec4MutationTask.DeadlineException
+                            || cause instanceof TimeoutException || cause instanceof CancellationException;
+                    incomplete(cause + "; mutant=" + expectedId, deadline);
                 }
                 e.printStackTrace(Main.infoStr);
                 // TODO Auto-generated catch block
@@ -341,6 +355,14 @@ public class MutationsEvaluator {
     }
 
     public void setTimeoutReached() {
-        this.timeoutReached = true;
+        incomplete("measurement coordinator interrupted", false);
+    }
+
+    public boolean isDeadlineReached() {
+        return deadlineReached;
+    }
+
+    public List<String> getIncompleteReasons() {
+        return new ArrayList<String>(incompleteReasons);
     }
 }

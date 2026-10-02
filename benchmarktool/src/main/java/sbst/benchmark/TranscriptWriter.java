@@ -218,7 +218,9 @@ public class TranscriptWriter implements IToolListener {
         } catch (Throwable e) {
             Main.info("ERROR: Something went wrong! Consult log.txt for more infos!");
             e.printStackTrace(Main.debugStr);
-            if (isMaze()) throw new IllegalStateException("MAZE benchmark processing failed for " + cname, e);
+            if (isMaze()) {
+                throw new IllegalStateException("MAZE benchmark processing failed for " + cname, e);
+            }
         }
 
     }

@@ -39,6 +39,12 @@ Provisioning builds the small Java 8/21/Python image in
 `experiments/ast2027/Dockerfile`. Downloads and build outputs stay outside tracked
 source directories.
 
+Provisioning checks host Python/Docker/storage prerequisites before building and
+records `host-machine.json`. T3 builds use the invoking Linux UID/GID and a local
+Maven cache, without leaving root-owned tool files. Use the same Python 3.9+
+interpreter for provisioning and campaign commands. Host installation and power
+or VM configuration changes remain explicit operator actions.
+
 Adapter process checks: `python3 -m unittest discover -s tools/seeded/tests -v`.
 
 Kex internal per-trace error messages are retained as diagnostics, not interpreted

@@ -34,10 +34,17 @@ curl --fail --location --retry 3 "$release_url" -o "/results/downloads/$release.
 printf '%s  %s\n' "$release_sha256" "/results/downloads/$release.tar.gz" | sha256sum -c -
 tar -xzf "/results/downloads/$release.tar.gz" -C /results/env
 mv "/results/env/$release" /results/env/maze
-test "$(/results/env/maze/maze --version)" = 'maze 1.2.3'
+maze_version=$(/results/env/maze/maze --version)
+printf 'MAZE package version: %s\n' "$maze_version"
+test "$maze_version" = 'maze 1.2.3'
 printf '{"version":"1.2.3","url":"%s","sha256":"%s"}\n' "$release_url" "$release_sha256" > /results/env/maze-release.json
 fi
-cd /juge
+mkdir -p /results/build-source
+cp /juge/pom.xml /juge/checkstyle.xml /results/build-source/
+cp -R /juge/runtool /juge/benchmarktool /juge/maze_runtool /results/build-source/
+mkdir -p /results/build-source/tools
+cp -R /juge/tools/maze /results/build-source/tools/
+cd /results/build-source
 mvn -B -ntp -N -DskipTests install
 mvn -B -ntp -f runtool/pom.xml -DskipTests install
 mvn -B -ntp -f benchmarktool/pom.xml -DskipTests package
@@ -46,8 +53,8 @@ MAZE_HOME=/results/env/maze sh tools/maze/build-adapter.sh
 cp tools/maze/runtool /results/env/tool/
 cp tools/maze/lib/maze-adapter.jar /results/env/tool/lib/
 cp benchmarktool/target/benchmarktool-1.0.0-shaded.jar /results/env/lib/runner.jar
-cp infrastructure/lib/junit-4.12.jar infrastructure/lib/hamcrest-core-1.3.jar infrastructure/lib/jacocoagent.jar infrastructure/lib/pitest-1.1.11.jar infrastructure/lib/pitest-command-line-1.1.11.jar /results/env/lib/
-cp infrastructure/scripts/maze_validate_generation.py /results/env/
+cp /juge/infrastructure/lib/junit-4.12.jar /juge/infrastructure/lib/hamcrest-core-1.3.jar /juge/infrastructure/lib/jacocoagent.jar /juge/infrastructure/lib/pitest-1.1.11.jar /juge/infrastructure/lib/pitest-command-line-1.1.11.jar /results/env/lib/
+cp /juge/infrastructure/scripts/maze_validate_generation.py /results/env/
 cp /results/suite/subjects/*.java /results/env/subjects/src/
 /opt/java8/bin/javac -g -d /results/env/subjects/classes /results/env/subjects/src/*.java
 mkdir -p /results/env/characteristics
@@ -66,3 +73,5 @@ with zipfile.ZipFile('/results/env/lib/runner.jar') as jar:
     v['jacoco_core'] = jar.read('META-INF/maven/org.jacoco/org.jacoco.core/pom.properties').decode()
 Path('/results/env/versions.json').write_text(json.dumps(v, indent=2) + '\n')
 PY
+cd /results
+rm -rf /results/build-source

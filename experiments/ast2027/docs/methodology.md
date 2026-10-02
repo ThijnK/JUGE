@@ -44,13 +44,26 @@ raw integer counts rather than rounded percentage strings. A skips mutation;
 its mutation placeholders are not measurements. B uses PIT 1.1.11 default mutators
 with full enumeration, disabling historical half/third sampling on large subjects.
 The effective mutant denominator excludes ignored mutants. Campaigns use a fresh
-Java 8 JVM per mutant, with a 180-second child cap and 3600-second total measurement
-cap. These execution limits differ from legacy JUGE defaults and are applied to
-all tools. JUnit timeout-only/flaky-only failures are ignored consistently even
+Java 8 JVM per mutant. The common child allowance is
+`min(3600s, max(180s, 30s + 10s * test-class count + sum(test-method timeouts)))`;
+Methods without an explicit timeout use JUGE's existing five seconds, and explicit
+timeouts remain unchanged. Startup and class-fixture allowances cover JVM setup
+and generated replay/fixture waits. Each child's `budget.json` records the counts
+and allowance. The entire mutation stage retains its 3600-second cap; deadlines
+remain unresolved. This replaces the fixed 180-second child cap, which could
+expire during ordinary sequential timeouts in large suites. It applies equally
+to all tools. JUnit timeout-only/flaky-only failures are ignored consistently even
 when other tests pass. A missing child result or classloading/setup error makes
 the measurement incomplete; it is never an invented kill. Mutated bytecode
 precedes other subject copies on the mutation classpath. Retain generated,
 ignored and effective counts; report denominator differences across runs/tools.
+
+JUnit 4.12 timeouts and evidenced generated-test `InterruptedException` failures
+are retained as non-killing evidence, rather than misclassified as kills or
+operator stops. Without another killing failure the mutant is ignored. This
+correction can change ignored denominators; report the harness revision. Timed-out
+threads can remain active within a mutant child; exiting or terminating that JVM
+prevents leakage into later mutants. T3's engine and ten-second wait remain unchanged.
 
 Primary analysis includes measured outcomes and gives zero delivered coverage/kill
 to confirmed generator process failures, generation timeouts and verified

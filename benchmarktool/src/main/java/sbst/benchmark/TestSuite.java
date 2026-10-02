@@ -524,10 +524,16 @@ public class TestSuite {
                 evaluator.setTimeoutReached();
             }
 
-            // if timeout is reached, we create a file TIMEOUT.txt
+            // Preserve the cause instead of labelling every setup error a timeout.
             if (evaluator.isTimeoutReached()) {
-                File time_out = new File(this.getTestCaseDir().getAbsolutePath() + File.separator + "TIMEOUT.txt");
-                time_out.createNewFile();
+                File failure = new File(this.getTestCaseDir(),
+                        evaluator.isDeadlineReached() ? "TIMEOUT.txt" : "MUTATION_ERROR.txt");
+                try (PrintWriter out = new PrintWriter(failure)) {
+                    out.println("Generated mutants: " + wrapper.getGeneratedMutants().getNumberOfMutations());
+                    for (String reason : evaluator.getIncompleteReasons()) {
+                        out.println(reason);
+                    }
+                }
                 Main.info("ERROR Evaluation not completed ignore it.");
                 return;
             }

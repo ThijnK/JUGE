@@ -38,4 +38,15 @@ public class TestInterruptedMutation {
                 Collections.<String>emptyList(), Collections.<TestInfo>emptySet(), null);
         assertEquals(MutationResults.State.SURVIVED, task.processTestResults(new Result()).getState());
     }
+
+    @Test(expected = IllegalStateException.class)
+    public void infrastructureFailureAfterAnAssertionIsNotHiddenByTheKill() {
+        TestExec4MutationTask task = new TestExec4MutationTask("",
+                Collections.<String>emptyList(), Collections.<TestInfo>emptySet(), null);
+        Result result = new Result();
+        org.junit.runner.Description test = org.junit.runner.Description.createTestDescription("Generated", "fails");
+        result.getFailures().add(new org.junit.runner.notification.Failure(test,new AssertionError("assertion")));
+        result.getFailures().add(new org.junit.runner.notification.Failure(test,new NoClassDefFoundError("runtime")));
+        task.processTestResults(result);
+    }
 }
