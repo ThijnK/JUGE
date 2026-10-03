@@ -262,6 +262,15 @@ def status(root, spec):
     return result
 
 
+def configure_b(root, spec):
+    chosen = selection(root, spec)
+    if not chosen:
+        raise ValueError('B requires complete verified A measurements for this archived policy')
+    if 'b_treatment_policy' in spec and (root / 'selection.json').exists() and read(root / 'selection.json') != chosen:
+        raise ValueError('B treatment record conflicts with the frozen fixed policy')
+    atomic(root / 'selection.json', chosen)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('command', choices=['run', 'resume', 'generate', 'measure', 'rehearse', 'status', 'stop'])
@@ -315,7 +324,8 @@ def main():
             root = parent / 'rehearsal-data'
             prepare_validation(parent, root, spec)
             (root / 'STOP').unlink(missing_ok=True)
-            atomic(root / 'selection.json', dict(manifest_id=spec['id'], treatment='BFS', purpose='rehearsal'))
+            atomic(root / 'selection.json', selection(root, spec) if 'b_treatment_policy' in spec
+                   else dict(manifest_id=spec['id'], treatment='BFS', purpose='rehearsal'))
             reconcile(root, spec)
             rows = [r for r in spec['runs'] if r['repetition'] == 1 and (
                 (r['experiment'] == 'A' and r['subject'] == 'HeapSort' and r['treatment'] == 'DFS' and r['budget'] == 10)
@@ -338,14 +348,19 @@ def main():
             return
         reconcile(root, spec)
         experiments = ('A', 'B') if args.command in ('run', 'resume') else (args.experiment,)
+        generation_first = args.command in ('run', 'resume') and 'b_treatment_policy' in spec
+        if generation_first:
+            for experiment in experiments:
+                if experiment == 'B':
+                    configure_b(root, spec)
+                rows = [r for r in spec['runs'] if r['experiment'] == experiment]
+                if not run_stage(root, spec, rows, 'generation', stop, reporter):
+                    return
         for experiment in experiments:
             rows = [r for r in spec['runs'] if r['experiment'] == experiment]
             if experiment == 'B':
-                chosen = selection(root, spec)
-                if not chosen:
-                    raise ValueError('B requires complete verified A measurements')
-                atomic(root / 'selection.json', chosen)
-            if args.command != 'measure':
+                configure_b(root, spec)
+            if args.command != 'measure' and not generation_first:
                 if not run_stage(root, spec, rows, 'generation', stop, reporter):
                     return
             if args.command != 'generate':

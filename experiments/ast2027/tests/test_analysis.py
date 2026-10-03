@@ -9,11 +9,25 @@ try:
     import analyze
 except ImportError:
     analyze = None
-from common import atomic, digest, identity, matrix, read, TREATMENTS
+from common import B_TREATMENT_POLICY, atomic, digest, identity, matrix, read, TREATMENTS
 
 
 @unittest.skipIf(analyze is None, 'Run in the benchmark image for SciPy')
 class StatisticsTests(unittest.TestCase):
+    def test_fixed_b_configuration_is_exported_without_a_observations(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'env').mkdir()
+            (root / 'env/subject-characteristics.csv').write_text('subject,methods\nBinarySearch,2\n')
+            atomic(root / 'suite/feature-tags.json', {'BinarySearch': ['search']})
+            atomic(root / 'manifest.json', dict(id='m', runs=matrix(), statistics_policy='fixture',
+                b_treatment_policy=dict(B_TREATMENT_POLICY)))
+            analyze.analyze(root)
+            self.assertEqual(read(root / 'selection.json')['treatment'], 'FOS+COS')
+            availability = read(root / 'stats/availability.json')
+            self.assertEqual(availability['scored'], 0)
+            self.assertEqual(len(availability['missing']), 3600)
+
     def test_known_effect_sizes_and_ties(self):
         self.assertEqual(analyze.compare([1, 1], [0, 0])['a12'], 1.)
         self.assertEqual(analyze.compare([0, 0], [1, 1])['a12'], 0.)

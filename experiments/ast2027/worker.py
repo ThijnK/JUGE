@@ -10,7 +10,7 @@ import sys
 import time
 import uuid
 
-from common import OPTIONS, atomic, digest, fingerprint, read
+from common import OPTIONS, atomic, b_treatment, digest, fingerprint, read
 
 
 def instantiate(template, destination):
@@ -88,7 +88,7 @@ def run_one(root, row, attempt, phase="all", generation_record=None):
     target = 'nl.uu.maze.benchmarks.' + row['subject']
     treatment = row['treatment']
     if row['experiment'] == 'B' and row['tool'] == 'MAZE':
-        treatment = read(root / 'selection.json')['treatment']
+        treatment = b_treatment(root, spec)
     result['maze_treatment'] = treatment if row['tool'] == 'MAZE' else None
     result['treatment_kind'] = 'combinator' if treatment == 'FOS+COS' else ('base' if row['tool'] == 'MAZE' else 'tool')
     tool = 'maze-ast2027' if row['tool'] == 'MAZE' else row['tool'].lower()

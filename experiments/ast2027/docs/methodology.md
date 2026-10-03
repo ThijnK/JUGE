@@ -11,7 +11,7 @@ They do not guarantee termination of arbitrary subject/library execution.
 - Twenty synthetic subjects are snapshotted under `subjects/`; their provenance
   is recorded there. No subject is removed for being difficult. A uses DFS, BFS,
   SGS, RPS, COS, FOS and FOS+COS at 10/60 seconds, ten repetitions. B compares the
-  selected MAZE treatment with T3, EvoSuite and Kex at 60 seconds, ten repetitions.
+  fixed MAZE FOS+COS treatment with T3, EvoSuite and Kex at 60 seconds, ten repetitions.
 - MAZE runs symbolically with minimization, depth 400, replay bound 10,000,
   array bound 10, path-length coverage 0, target aging 0, normal floating-point
   constraints and division-by-zero checking. FOS+COS starts with FOS and uses
@@ -77,16 +77,19 @@ receipts match tool version, target, seed and budget. Empty output requires norm
 completion and configuration/seed checks first.
 
 Infrastructure failures, metric failures, tool errors of unresolved cause,
-and missing/corrupt records are not zeroed. They block complete analysis/selection
+and missing/corrupt records are not zeroed. They block complete analysis
 until diagnosed. Interrupted attempts remain retryable, not observations.
 Successful-only statistics are explicitly secondary. Both views retain sample
 sizes; `outcomes.csv` shows denominators and failure categories for every cell.
 Do not retry legitimate timeouts or empty outcomes seeking a better result.
 
-A-to-B selection requires all 2,800 A outcomes scoreable under the primary policy;
-maximize the unweighted mean of 20 subject means at 60 seconds. Ties follow the
-listed strategy order. B reuses the same subjects: this evaluates a configuration
-selected on the corpus, not held-out generalization.
+B always uses MAZE FOS+COS, chosen a priori and frozen in `b_treatment_policy`.
+A results do not choose or change B's treatment. A and B generation can both
+finish before any measurement. `selection.json` records the fixed configuration;
+it is not an empirical winner selection. Archived manifests without this policy
+retain their former A-dependent rule and must not be mixed with this campaign.
+Higher measurement concurrency can still affect timeouts and ignored denominators;
+freeze and validate it even when generation has finished.
 
 ## Statistical conventions
 

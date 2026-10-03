@@ -91,9 +91,9 @@ by the unchanged 3600-second total measurement cap. The formula and timeout
 interpretation are in [methodology](docs/methodology.md); per-child `budget.json`
 preserves the calculation. Generated engines and test timeouts are unchanged.
 
-`run` performs A generation, A coverage, B generation, B coverage, then B mutation.
-It selects the MAZE configuration after A coverage, using the frozen selection
-rule; this dependency prevents generating B's MAZE tests before A is measured.
+`run` performs A generation, B generation, A coverage, B coverage, then B mutation.
+B's MAZE treatment is always FOS+COS, frozen at preparation and independent of
+A results. `selection.json` records that fixed choice.
 Generation and measurement never overlap within a campaign. A has 2,800 cases;
 B has 800 by default. There is no overall session time limit and no statistics
 export during the campaign.
@@ -102,10 +102,16 @@ For explicit control over the stage boundary:
 
 ```sh
 python3 "$RESULTS/suite/campaign.py" generate --results "$RESULTS" --experiment A
-python3 "$RESULTS/suite/campaign.py" measure --results "$RESULTS" --experiment A
 python3 "$RESULTS/suite/campaign.py" generate --results "$RESULTS" --experiment B
+python3 "$RESULTS/suite/campaign.py" measure --results "$RESULTS" --experiment A
 python3 "$RESULTS/suite/campaign.py" measure --results "$RESULTS" --experiment B
 ```
+
+Each command exits after its requested stage. Generation uses `generation_jobs`;
+coverage and mutation use `measurement_jobs`, both frozen before validation.
+Measurement only reads saved suites and does not invoke generators. Analysis is
+a separate aggregate command. Keep other work idle during generation; measurement
+concurrency also needs validation because resource contention can change timeouts.
 
 ## Run unattended with periodic reports
 

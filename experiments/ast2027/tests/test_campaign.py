@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import campaign
-from common import atomic, digest, matrix, read, valid_record
+from common import B_TREATMENT_POLICY, atomic, digest, identity, matrix, read, valid_record
 
 
 class CampaignTests(unittest.TestCase):
@@ -146,3 +146,48 @@ class CampaignTests(unittest.TestCase):
         with patch.object(campaign, 'docker_json', return_value=dict(NCPU=8, MemTotal=8*1024**3)):
             with self.assertRaisesRegex(ValueError, 'exceeds Docker resources'):
                 campaign.capacity(spec)
+
+    def test_b_stages_are_independent_of_a_and_generate_never_measures(self):
+        row = next(r for r in matrix() if r['experiment'] == 'B' and r['tool'] == 'MAZE')
+        spec = dict(self.spec, runs=[self.rows[0], row], environment={},
+                    purpose='production', b_treatment_policy=dict(B_TREATMENT_POLICY))
+        for name in ('preflight.json', 'preflight-B.json', 'rehearsal.json'):
+            atomic(self.root / name, dict(manifest_id='m', environment_id=identity({}), run_ids=[]))
+        for command, expected in [('generate', ['generation']), ('measure', ['coverage', 'mutation'])]:
+            with self.subTest(command=command), \
+                    patch.object(sys, 'argv', ['campaign.py', command, '--results', str(self.root), '--experiment', 'B']), \
+                    patch.object(campaign, 'manifest', return_value=spec), \
+                    patch.object(campaign, 'verify_environment'), \
+                    patch.object(campaign, 'capacity', return_value={}), \
+                    patch.object(campaign, 'ProgressReporter'), \
+                    patch.object(campaign.signal, 'signal'), \
+                    patch.object(campaign, 'reconcile'), \
+                    patch.object(campaign, 'run_stage', return_value=True) as stages, \
+                    patch.object(campaign, 'assemble', return_value=True) as assemble:
+                campaign.main()
+                self.assertEqual([call.args[3] for call in stages.call_args_list], expected)
+                self.assertTrue(all(call.args[2] == [row] for call in stages.call_args_list))
+                if command == 'generate':
+                    assemble.assert_not_called()
+            self.assertEqual(read(self.root / 'selection.json')['treatment'], 'FOS+COS')
+        self.assertFalse((self.root / 'runs').exists())
+
+    def test_full_fixed_campaign_generates_both_experiments_before_measurement(self):
+        b_row = next(r for r in matrix() if r['experiment'] == 'B' and r['tool'] == 'MAZE')
+        spec = dict(self.spec, runs=[self.rows[0], b_row], environment={},
+                    purpose='production', b_treatment_policy=dict(B_TREATMENT_POLICY))
+        for name in ('preflight.json', 'preflight-B.json', 'rehearsal.json'):
+            atomic(self.root / name, dict(manifest_id='m', environment_id=identity({}), run_ids=[]))
+        with patch.object(sys, 'argv', ['campaign.py', 'run', '--results', str(self.root)]), \
+                patch.object(campaign, 'manifest', return_value=spec), \
+                patch.object(campaign, 'verify_environment'), \
+                patch.object(campaign, 'capacity', return_value={}), \
+                patch.object(campaign, 'ProgressReporter'), \
+                patch.object(campaign.signal, 'signal'), \
+                patch.object(campaign, 'reconcile'), \
+                patch.object(campaign, 'run_stage', return_value=True) as stages, \
+                patch.object(campaign, 'assemble', return_value=True):
+            campaign.main()
+        self.assertEqual([(call.args[2][0]['experiment'], call.args[3]) for call in stages.call_args_list],
+                         [('A', 'generation'), ('B', 'generation'), ('A', 'coverage'),
+                          ('B', 'coverage'), ('B', 'mutation')])

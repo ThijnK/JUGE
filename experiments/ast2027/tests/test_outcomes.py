@@ -51,6 +51,33 @@ class OutcomeTests(unittest.TestCase):
         with patch.object(common, 'valid_record', return_value=dict(status='excluded')):
             self.assertIsNone(common.selection(Path('.'), spec))
 
+    def test_fixed_b_treatment_never_reads_a_outcomes(self):
+        spec = dict(id='m', runs=common.matrix(), b_treatment_policy=dict(common.B_TREATMENT_POLICY))
+        with patch.object(common, 'valid_record', side_effect=AssertionError('A must not choose B')) as records:
+            result = common.selection(Path('.'), spec)
+        records.assert_not_called()
+        self.assertEqual(result['treatment'], 'FOS+COS')
+        self.assertEqual(result['source'], 'fixed')
+        self.assertNotIn('scores', result)
+
+    def test_fixed_b_worker_needs_no_selection_file_and_rejects_override(self):
+        spec = dict(id='m', b_treatment_policy=dict(common.B_TREATMENT_POLICY))
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertEqual(common.b_treatment(root, spec), 'FOS+COS')
+            self.assertFalse((root / 'selection.json').exists())
+            common.atomic(root / 'selection.json', common.selection(root, spec))
+            self.assertEqual(common.b_treatment(root, spec), 'FOS+COS')
+            common.atomic(root / 'selection.json', dict(manifest_id='m', treatment='BFS'))
+            with self.assertRaisesRegex(ValueError, 'conflicts'):
+                common.b_treatment(root, spec)
+
+    def test_fixed_b_manifest_cannot_choose_another_strategy(self):
+        for policy in [dict(common.B_TREATMENT_POLICY, treatment='BFS'),
+                       dict(common.B_TREATMENT_POLICY, mode='adaptive')]:
+            with self.assertRaisesRegex(ValueError, 'Unsupported frozen B'):
+                common.selection(Path('.'), dict(id='m', b_treatment_policy=policy))
+
     @unittest.skipIf(analyze is None, 'Run in the benchmark image for SciPy')
     def test_exports_keep_zero_outcomes_distinct_from_missing_measurements(self):
         with tempfile.TemporaryDirectory() as tmp:

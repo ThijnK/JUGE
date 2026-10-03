@@ -15,7 +15,7 @@ import sys
 import time
 import uuid
 
-from common import MEASUREMENT_POLICY, OUTCOME_POLICY, SUBJECTS, atomic, digest, fingerprint, identity, matrix, read, selection, valid_record
+from common import B_TREATMENT_POLICY, MEASUREMENT_POLICY, OUTCOME_POLICY, SUBJECTS, atomic, digest, fingerprint, identity, matrix, read, selection, valid_record
 from host import container_user, inspect_host
 
 HERE = Path(__file__).resolve().parent
@@ -183,7 +183,8 @@ def prepare(args, root):
                 repositories=repositories, environment=fingerprint(root / 'env'), suite=fingerprint(root / 'suite'),
                 b_repetitions=args.b_repetitions, purpose=args.purpose, runs=matrix(args.b_repetitions),
                 resources=dict(cpus=2, container_memory='4g', maze_jvm_heap='2500m', juge_jvm_heap='1500m', a_watchdog_seconds=300, b_watchdog_seconds=1800),
-                selection_rule='maximum unweighted mean of per-subject mean branch coverage at 60s; failure-inclusive outcomes; all 20 subjects and 10 repetitions required; ties use DFS,BFS,SGS,RPS,COS,FOS,FOS+COS order',
+                b_treatment_policy=dict(B_TREATMENT_POLICY),
+                selection_rule='FOS+COS chosen a priori; independent of A outcomes',
                 statistics_policy='alpha=.05; MWU two-sided asymptotic tie-corrected with continuity correction; quartiles linear; sample SD; Friedman on complete subject blocks of treatment means; Nemenyi studentized-range infinite df / sqrt(2); ties average ranks and all co-winners counted')
     if args.campaign:
         spec['campaign'] = dict(generation_jobs=args.generation_jobs, measurement_jobs=args.measurement_jobs,
@@ -294,8 +295,14 @@ def run(args, root, spec):
             rows += [r for r in spec['runs'] if r['experiment'] == 'B' and r['tool'] == 'MAZE' and r['subject'] == 'BinarySearch' and r['repetition'] == 1]
         else:
             rows = [r for r in rows if r['subject'] in (('BinarySearch', 'TriangleClassifier', 'BitwiseManipulator', 'StringPatternMatcher', 'FloatStatistics', 'StringUtils', 'BinaryTree') if spec.get('campaign') else ('BinarySearch', 'TriangleClassifier')) and r['repetition'] in (1, 2)]
-        atomic(root / 'selection.json', dict(manifest_id=spec['id'], treatment='BFS', purpose='PIT preflight only'))
+        atomic(root / 'selection.json', selection(root, spec) if 'b_treatment_policy' in spec
+               else dict(manifest_id=spec['id'], treatment='BFS', purpose='PIT preflight only'))
     if args.experiment == 'B':
+        if 'b_treatment_policy' in spec:
+            fixed = selection(root, spec)
+            if (root / 'selection.json').exists() and read(root / 'selection.json') != fixed:
+                raise SystemExit('B treatment record conflicts with the frozen fixed policy.')
+            atomic(root / 'selection.json', fixed)
         chosen = read(root / 'selection.json') if (root / 'selection.json').exists() else {}
         if chosen.get('manifest_id') != spec['id']:
             raise SystemExit('Analyze complete A first to write a valid selection.json.')

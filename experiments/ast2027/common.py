@@ -11,6 +11,7 @@ SUBJECTS = 'AckermannPeter BinarySearch BinaryTree BitwiseManipulator BracketBal
 BASE = ['DFS', 'BFS', 'SGS', 'RPS', 'COS', 'FOS']
 TREATMENTS = BASE + ['FOS+COS']
 OPTIONS = ['--minimization=true', '--max-depth=400', '--max-replay-steps=10000', '--max-array-size=10', '--path-length-coverage=0', '--target-path-aging=0', '--constrain-fp-params-to-normal-numbers=true', '--check-division-by-zero=true']
+B_TREATMENT_POLICY = dict(version=1, mode='fixed', treatment='FOS+COS')
 
 MEASUREMENT_POLICY = dict(version=3, isolated_mutants=True, total_seconds=3600,
     child_budget=dict(policy='suite-v1', minimum_seconds=180, startup_seconds=30,
@@ -134,7 +135,12 @@ def write_csv(path, rows):
 
 
 def selection(root, spec):
-    """Revalidate all A evidence before selecting a B treatment."""
+    """Resolve the frozen B policy; retain the former rule for archived manifests."""
+    if 'b_treatment_policy' in spec:
+        if spec['b_treatment_policy'] != B_TREATMENT_POLICY:
+            raise ValueError('Unsupported frozen B treatment policy')
+        return dict(manifest_id=spec['id'], treatment='FOS+COS', kind='combinator',
+                    source='fixed', rule='FOS+COS chosen a priori; independent of A outcomes')
     values = {}
     for row in spec['runs']:
         if row['experiment'] != 'A':
@@ -148,3 +154,14 @@ def selection(root, spec):
     scores = {t: statistics.mean(statistics.mean(values[s, 60, t]) for s in SUBJECTS) for t in TREATMENTS}
     winner = max(TREATMENTS, key=scores.get)
     return dict(manifest_id=spec['id'], treatment=winner, kind='combinator' if winner == 'FOS+COS' else 'base', scores=scores, rule=spec['selection_rule'])
+
+
+def b_treatment(root, spec):
+    """New B workers need no A data or selection file; reject conflicting records."""
+    path = root / 'selection.json'
+    if 'b_treatment_policy' in spec:
+        expected = selection(root, spec)
+        if path.exists() and read(path) != expected:
+            raise ValueError('B treatment record conflicts with the frozen fixed policy')
+        return expected['treatment']
+    return read(path)['treatment']
