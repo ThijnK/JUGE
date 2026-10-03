@@ -115,7 +115,7 @@ blank/comment lines. `feature-tags.json` is hand-assigned descriptive metadata.
 ## Recording changes and interventions
 
 Keep preflight, diagnostic and rehearsal runs separate from the paper dataset.
-Run fresh preflights for each frozen environment.
+Preflights and rehearsal are optional sanity checks, not execution prerequisites.
 
 Record each change or intervention with its date, reason, affected settings,
 validation and disposition of prior attempts in the results' `operator-log.md`.
@@ -125,9 +125,9 @@ Report these details alongside completion counts. Never alter frozen raw evidenc
 ## Stage and retry policy
 
 Generation, coverage and mutation have independent checkpoints. No statistical
-analysis runs during generation. Coverage measurement of A must precede B's
-MAZE generation because it determines the selected strategy. Saved suites are
-measured in fresh working copies; metric failures never trigger regeneration.
+analysis runs during generation. A and B generation are independent and can both
+finish before measurement. Saved suites are measured in fresh working copies;
+metric failures never trigger regeneration.
 
 The generation deadline follows JUGE's documented twice-budget allowance for
 pre/post-processing, while each generator still receives its nominal internal
