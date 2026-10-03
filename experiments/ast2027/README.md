@@ -1,48 +1,22 @@
-# AST 2027 experiments
+# AST2027 benchmark
 
-The campaign generates and archives tests first, measures the saved suites in
-separate phases, and exports statistical analysis only when requested. Each
-planned case gets one generation attempt. Confirmed generator failures and
-verified empty output contribute zero delivered effectiveness; measurement and
-infrastructure errors are kept distinct.
+The campaign preserves generated suites, measures those saved suites in separate
+stages, and analyzes results on request. Generation and measurement never overlap.
+See [methodology](docs/methodology.md) for settings and outcome interpretation.
 
-Use Docker and Python 3.9+ on Linux/macOS, or inside WSL2 on Windows. Store the
-checkout and results in the WSL Linux filesystem, not `/mnt/c`. All containers
-use Linux AMD64; a Ryzen desktop executes this architecture without ARM emulation.
-Read [methodology](docs/methodology.md) before interpreting results.
-
-On WSL/Linux, containers use the invoking user's UID/GID so evidence stays readable.
-From Windows PowerShell, enter your usual WSL user terminal:
-
-```powershell
-wsl.exe -d Ubuntu
-```
-
-Use a Python 3.9+ interpreter for all host commands. If Ubuntu's system Python is
-older, use a separate installation or virtual environment instead of replacing
-the system interpreter. Check Docker availability inside that same WSL terminal.
-Run the read-only prerequisite check before provisioning/preparation:
-
-```sh
-python3 experiments/ast2027/host.py --directory "$PWD/results/ast2027" \
-  --generation-jobs 1 --measurement-jobs 1 --cpus 2 --memory-gb 4
-```
-
-Preparation checks these prerequisites automatically and saves `host-machine.json`
-with Python, hardware, actual Docker capacity/context, filesystem, competing
-processes and, on WSL, Windows/WSL and power settings. The manifest hashes this
-record. Review unavailable fields and record interventions in `operator-log.md`.
-The running Docker engine's capacity governs the resource check. Host installation
-and power/VM configuration changes remain explicit operator actions.
+- A: 20 subjects, seven MAZE treatments, 10/60-second budgets, ten repetitions
+  (2,800 cases).
+- B: MAZE FOS+COS, T3, EvoSuite and Kex, 60 seconds, ten repetitions (800 cases).
+  FOS+COS is fixed before execution; B does not depend on A results.
+- Seeds are paired by subject/budget/repetition; randomized run order is frozen.
+  Wall-clock budgets and uncontrolled tool randomness prevent exact reproducibility.
+- Engines: MAZE 1.2.3 Linux AMD64, EvoSuite 1.2.0, Kex 0.0.11 and pinned upstream T3.
+  T3 Worklist randomness remains unseeded; its generated ten-second waits remain.
 
 ## Prepare
 
-Preparation downloads the published Linux AMD64 MAZE 1.2.3 distribution and
-verifies its pinned checksum. To test a different engine build, supply
-`--maze-package /absolute/path/to/maze-linux-amd64.tar.gz`; the local archive is
-copied and hashed into the frozen environment.
-
-From this JUGE checkout:
+Use Docker Linux AMD64 containers and Python 3.9+. On Windows, use WSL2 and keep
+checkouts, tools and results in the Linux filesystem, not `/mnt/c`.
 
 ```sh
 python3 tools/seeded/provision.py --output "$PWD/local/ast2027/tools"
@@ -52,109 +26,48 @@ python3 experiments/ast2027/bench.py prepare --campaign \
   --generation-jobs 1 --measurement-jobs 1 --cpus 2 --memory-gb 4
 ```
 
-Set the job counts and per-container CPU/memory limits before preparation. The
-runner requires enough Docker VM capacity for the larger job count, plus at
-least 1 GiB memory headroom. CPU quotas are not dedicated physical cores; pilot
-under the intended load before increasing concurrency. Kex uses several JVMs
-and native solver memory, so heap limits alone do not establish adequate RAM.
-Swap is disabled for campaign containers. Record the desktop CPU, RAM, OS,
-Docker/WSL configuration and power settings with the published artifact.
+Preparation checks host capacity, records the machine, verifies the pinned MAZE
+package checksum, and snapshots tools, subjects, adapters, scripts and image
+identity. Use an unused results directory. Resources and job counts are frozen;
+changes require fresh preparation. Swap is disabled. Leave Docker at least 1 GiB
+memory headroom and practical headroom for the host. CPU quotas share cores and
+caches; more concurrent measurements can change timeout outcomes.
 
-Preparation snapshots subjects, compiler/tool binaries, adapters and runner,
-records hashes and the image identity, retains a unique local image tag, and
-freezes a randomized run order. Keep that image tag until the campaign is archived.
-Adapters must come from the same revision. Existing output directories are not
-overwritten. Changing resources, tools or policies requires fresh preparation.
+## Run
 
-## Validate, then run
-
-Always use the copied scripts:
+Always use the copied scripts. Run each command after the previous one finishes:
 
 ```sh
 RESULTS="$PWD/results/ast2027"
-python3 "$RESULTS/suite/bench.py" smoke --results "$RESULTS" --experiment A
-python3 "$RESULTS/suite/bench.py" smoke --results "$RESULTS" --experiment B
-python3 "$RESULTS/suite/campaign.py" rehearse --results "$RESULTS"
-python3 "$RESULTS/suite/campaign.py" run --results "$RESULTS"
-```
-
-Preflight covers every MAZE strategy and subject, all tools on reference subjects,
-and B stress subjects including BitwiseManipulator, StringPatternMatcher,
-FloatStatistics, StringUtils and BinaryTree. The separate rehearsal exercises
-HeapSort/DFS, all four tools on BinarySearch, and T3 StringPatternMatcher using
-the frozen concurrency. No preflight or rehearsal observations enter production.
-Reference cases must yield measured results; confirmed tool failures on stress
-cases are acceptable, but unresolved measurement/infrastructure errors are not.
-
-An explicit operator decision to omit fresh full preflights can be frozen during
-campaign preparation with `--preflight-waiver 'reason'`. The manifest records the
-waiver rather than claiming a preflight pass; the rehearsal remains required.
-
-Mutation children use a suite-size allowance with a 180-second minimum, bounded
-by the unchanged 3600-second total measurement cap. The formula and timeout
-interpretation are in [methodology](docs/methodology.md); per-child `budget.json`
-preserves the calculation. Generated engines and test timeouts are unchanged.
-
-`run` performs A generation, B generation, A coverage, B coverage, then B mutation.
-B's MAZE treatment is always FOS+COS, frozen at preparation and independent of
-A results. `selection.json` records that fixed choice.
-Generation and measurement never overlap within a campaign. A has 2,800 cases;
-B has 800 by default. There is no overall session time limit and no statistics
-export during the campaign.
-
-For explicit control over the stage boundary:
-
-```sh
 python3 "$RESULTS/suite/campaign.py" generate --results "$RESULTS" --experiment A
 python3 "$RESULTS/suite/campaign.py" generate --results "$RESULTS" --experiment B
 python3 "$RESULTS/suite/campaign.py" measure --results "$RESULTS" --experiment A
 python3 "$RESULTS/suite/campaign.py" measure --results "$RESULTS" --experiment B
+python3 "$RESULTS/suite/bench.py" analyze --results "$RESULTS"
 ```
 
-Each command exits after its requested stage. Generation uses `generation_jobs`;
-coverage and mutation use `measurement_jobs`, both frozen before validation.
-Measurement only reads saved suites and does not invoke generators. Analysis is
-a separate aggregate command. Keep other work idle during generation; measurement
-concurrency also needs validation because resource contention can change timeouts.
+`generate` only generates tests. `measure` reads saved suites: A coverage; B
+coverage then mutation. `analyze` verifies evidence and exports `runs.csv`,
+`selection.json` (the fixed B treatment) and `stats/`. Branch coverage and mutation
+effectiveness are separate; the composite JUGE score is not used.
 
-## Run unattended with periodic reports
+For the whole execution pipeline, use `campaign.py run --results "$RESULTS"`.
+There is no overall time limit. Reports appear every 15 minutes and at stage
+boundaries, in the terminal and `progress-reports.jsonl`; change the interval with
+`--progress-interval SECONDS`. Keep the terminal open, the machine awake and Docker
+running. No agent or monitoring service is needed. Run one coordinator at a time.
 
-The campaign is a normal Python program. It requires no agent or scheduled chat
-monitor. After preparation, preflight and rehearsal, run it in the foreground:
+Optional sanity checks exercise strategies/subjects/tools and the configured
+concurrency. They are not prerequisites for execution. Their observations stay
+in separate validation directories and are excluded from production analysis:
 
 ```sh
-python3 "$RESULTS/suite/campaign.py" run --results "$RESULTS" --progress-interval 900
+python3 "$RESULTS/suite/bench.py" smoke --results "$RESULTS" --experiment A
+python3 "$RESULTS/suite/bench.py" smoke --results "$RESULTS" --experiment B
+python3 "$RESULTS/suite/campaign.py" rehearse --results "$RESULTS"
 ```
 
-The default interval is 900 seconds (15 minutes). Reports also appear at startup,
-phase changes, and command completion, interruption or failure. They show resolved
-and planned counts for each experiment and phase, outcome counts, active case IDs
-and elapsed times, unresolved reasons, and free disk space. Confirmed generation
-failures/empty output need no measurement and are reported as `not_required` in
-measurement phases; unresolved failures stay separate from resolved results.
-
-Reports go to the terminal and append to `progress-reports.jsonl` in the results
-directory. They read small checkpoints without hashing test artifacts or invoking
-Docker statistics. The coordinator checks the timer while scheduling/waiting for
-workers and between verification records; reports can be delayed by a blocking
-operation. Reporting does not alter retry policies or launch jobs. Status is an
-informational snapshot, not evidence verification or a guarantee of worker health.
-These are terminal/file reports, not chat messages or desktop notifications.
-
-To continue after disconnecting the shell, start the validated campaign with:
-
-```sh
-nohup python3 "$RESULTS/suite/campaign.py" run --results "$RESULTS" \
-  --progress-interval 900 >> "$RESULTS/campaign-console.log" 2>&1 < /dev/null &
-tail -f "$RESULTS/campaign-console.log"
-```
-
-Exit `tail` with Ctrl+C; that leaves the background runner active. Use the `stop`
-command below to stop the campaign. For a stopped campaign, use `resume` in the
-same launch command. Keep the computer awake and Docker/WSL running. Statistical
-analysis remains a separate, explicitly requested step.
-
-## Status, stopping and recovery
+## Status and recovery
 
 ```sh
 python3 "$RESULTS/suite/campaign.py" status --results "$RESULTS"
@@ -162,49 +75,28 @@ python3 "$RESULTS/suite/campaign.py" stop --results "$RESULTS"
 python3 "$RESULTS/suite/campaign.py" resume --results "$RESULTS"
 ```
 
-Status reads small checkpoints without hashing all raw evidence during timed
-experiments. Full verification happens before reuse and analysis. Stop terminates
-active containers, preserving completed stages and interrupted attempts. Explicit
-resume may rerun user-interrupted work, but skips successful generation and all
-terminal tool failures. If the coordinator disappears, surviving containers are
-not blindly restarted: let them finish, then resume to collect their results.
-Untracked/missing evidence blocks execution rather than silently regenerating.
+`resume` continues the whole pipeline. To retain separate stages, interrupt with
+Ctrl+C and rerun that same `generate` or `measure` command. After `stop`, explicitly
+remove its `STOP` file before continuing a single stage. Completed work is reused;
+interrupted attempts remain saved. Never delete evidence to force regeneration.
+If the coordinator disappears while containers survive, let them finish before
+continuing to collect their results.
 
-Automatic generation retry is limited to one proven container-start failure.
-Tool crashes, confirmed deadlines and OOMs after confirmed tool invocation are
-terminal outcomes, not reasons to seek another generated suite. Measurement may
-retry once against the identical saved suite. Every attempt retains its evidence;
-remaining errors require diagnosis and are never silently scored zero. The runner
-captures Docker exit/OOM state before removing containers, and workers save
-available cgroup v1/v2 OOM, memory-peak and CPU counters. No monitoring agent is required to execute
-the queue; launch it in a persistent terminal/session if closing its parent shell.
+Confirmed generator failures/timeouts and verified empty output score zero
+primary delivered effectiveness, without fabricated raw counts. Infrastructure,
+measurement and ambiguous failures remain unresolved. Generation retries once
+only after a proven never-started container; measurement retries once against the
+identical saved suite. Keep the first complete verified measurement.
 
-Mutation setup failures are recorded in `MUTATION_ERROR.txt`; actual deadlines
-in `TIMEOUT.txt`, with the affected mutant and cause. Both remain unresolved.
-See the methodology for timeout/interruption and ignored-mutant interpretation.
+Mutation uses a fresh Java 8 JVM per mutant and a suite-size child allowance with
+a 180-second minimum and 3,600-second total cap. `budget.json` records the allowance;
+`TIMEOUT.txt` and `MUTATION_ERROR.txt` identify unresolved failures. Inspect
+`stages/`, `attempts/`, `runs/`, `logs/` and progress reports when troubleshooting.
 
-## Analyze and archive
+## Archive
 
-After the campaign finishes, explicitly run:
-
-```sh
-python3 "$RESULTS/suite/bench.py" analyze --results "$RESULTS"
-```
-
-This verifies evidence and creates `runs.csv`, `selection.json` and `stats/`.
-Primary effectiveness includes confirmed generator failures/timeouts and empty
-outputs as zero, without fabricating raw coverage/mutation counts. Successful-only
-results are secondary. Coverage and mutation are separately preserved when only
-one measurement succeeds. JUGE's composite score is not used by this analysis.
-
-`stages/` contains the selected stage checkpoints; `attempts/` preserves every
-attempt and output. `runs/` consolidates one row per planned case with stage
-provenance. Original generation artifacts are never used as writable measurement
-workspaces. Archive the complete directory because dependencies are shared through
-relative symlinks. `local/` and `results/` are ignored by Git.
-
-Stop writers, save the image, then archive the directory. In Bash, use unique
-names and fail on export/compression errors:
+After all writers stop, save the actual frozen image and archive the complete
+results directory (dependencies use relative symlinks). Use unique filenames:
 
 ```sh
 (
@@ -217,26 +109,11 @@ names and fail on export/compression errors:
   ARCHIVE_DIR=$(mktemp -d "$(dirname "$RESULTS")/ast2027-archive-XXXXXXXX")
   tar -czf "$ARCHIVE_DIR/ast2027-results.tar.gz" -C "$(dirname "$RESULTS")" "$(basename "$RESULTS")"
   tar -tzf "$ARCHIVE_DIR/ast2027-results.tar.gz" > /dev/null
-  (cd "$ARCHIVE_DIR" && shasum -a 256 ast2027-results.tar.gz > ast2027-results.tar.gz.sha256)
+  (cd "$ARCHIVE_DIR" && sha256sum ast2027-results.tar.gz > ast2027-results.tar.gz.sha256)
   printf 'Verified archive: %s\n' "$ARCHIVE_DIR/ast2027-results.tar.gz"
 )
 ```
 
-Back up the verified archive before deleting any working data. Publish the archive
-and identify both source revisions and the engine archive hash.
-To reanalyze elsewhere, extract it, load the saved Docker image and use its copied
-`bench.py analyze`. Seeds cannot make wall-clock-limited generation identical
-across hardware. Historical sequential campaigns retain their own frozen scripts;
-the parallel runner refuses to migrate their manifests.
-
-## Developer checks
-
-```sh
-python3 -m unittest discover -s tools/seeded/tests -v
-python3 -m unittest discover -s experiments/ast2027/tests -v
-```
-
-Run the experiment tests inside the benchmark image too, so SciPy-dependent
-analysis checks run. Run JUGE's Maven tests under Java 8, including the isolated
-mutation regressions. Real preflight/rehearsal remains necessary on the target
-machine before collecting paper observations.
+Back up and verify the archive before deleting working data. Rebuilding the image
+later may change installed dependencies. Include revisions, package hashes,
+hardware, resource limits and operator notes with published results.

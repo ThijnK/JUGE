@@ -108,7 +108,6 @@ class MatrixTests(unittest.TestCase):
             root = Path(tmp)
             row = matrix()[0]
             spec = dict(id='m', purpose='production', environment={}, suite={}, runs=[row])
-            atomic(root / 'preflight.json', dict(environment_id=identity({})))
             proof = root / 'proof'
             proof.write_text('completed')
             rec = dict(run=row, manifest_id='m', status='ok', evidence={'proof': digest(proof)})
@@ -136,7 +135,6 @@ class MatrixTests(unittest.TestCase):
                 spec = dict(purpose='production', environment={}, suite={}, runs=rows)
                 spec['id'] = identity(spec)
                 atomic(root / 'manifest.json', spec)
-                atomic(root / 'preflight.json', dict(environment_id=identity({})))
                 elapsed = [0]
                 executed = []
 

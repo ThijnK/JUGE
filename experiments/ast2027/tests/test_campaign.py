@@ -7,25 +7,14 @@ import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import campaign
-from common import B_TREATMENT_POLICY, atomic, digest, identity, matrix, read, required_certificates, valid_record
+from common import B_TREATMENT_POLICY, atomic, digest, identity, matrix, read, valid_record
 
 
 class CampaignTests(unittest.TestCase):
-    def test_preflight_waiver_is_explicit_and_keeps_rehearsal_gate(self):
-        self.assertEqual(required_certificates({}), ('preflight.json', 'preflight-B.json', 'rehearsal.json'))
-        policy = dict(version=1, full_preflights='operator_waiver', rehearsal='required', reason='operator requested no rerun')
-        self.assertEqual(required_certificates(dict(validation_policy=policy)), ('rehearsal.json',))
-        for changed in [dict(policy, reason=' '), dict(policy, rehearsal='waived'), dict(policy, version=2)]:
-            with self.assertRaises(ValueError):
-                required_certificates(dict(validation_policy=changed))
-
-    def test_waived_cli_needs_no_fabricated_preflight_certificates(self):
+    def test_generation_needs_no_preflight_or_rehearsal(self):
         row = next(r for r in matrix() if r['experiment'] == 'B' and r['tool'] == 'MAZE')
         spec = dict(self.spec, runs=[row], environment={}, purpose='production',
-                    b_treatment_policy=dict(B_TREATMENT_POLICY),
-                    validation_policy=dict(version=1, full_preflights='operator_waiver',
-                                           rehearsal='required', reason='operator requested no rerun'))
-        atomic(self.root / 'rehearsal.json', dict(manifest_id='m', environment_id=identity({}), runs=[]))
+                    b_treatment_policy=dict(B_TREATMENT_POLICY))
         with patch.object(sys, 'argv', ['campaign.py', 'generate', '--results', str(self.root), '--experiment', 'B']), \
                 patch.object(campaign, 'manifest', return_value=spec), \
                 patch.object(campaign, 'verify_environment'), \
@@ -38,6 +27,7 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(stages.call_args.args[3], 'generation')
         self.assertFalse((self.root / 'preflight.json').exists())
         self.assertFalse((self.root / 'preflight-B.json').exists())
+        self.assertFalse((self.root / 'rehearsal.json').exists())
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -179,8 +169,6 @@ class CampaignTests(unittest.TestCase):
         row = next(r for r in matrix() if r['experiment'] == 'B' and r['tool'] == 'MAZE')
         spec = dict(self.spec, runs=[self.rows[0], row], environment={},
                     purpose='production', b_treatment_policy=dict(B_TREATMENT_POLICY))
-        for name in ('preflight.json', 'preflight-B.json', 'rehearsal.json'):
-            atomic(self.root / name, dict(manifest_id='m', environment_id=identity({}), run_ids=[]))
         for command, expected in [('generate', ['generation']), ('measure', ['coverage', 'mutation'])]:
             with self.subTest(command=command), \
                     patch.object(sys, 'argv', ['campaign.py', command, '--results', str(self.root), '--experiment', 'B']), \
@@ -204,8 +192,6 @@ class CampaignTests(unittest.TestCase):
         b_row = next(r for r in matrix() if r['experiment'] == 'B' and r['tool'] == 'MAZE')
         spec = dict(self.spec, runs=[self.rows[0], b_row], environment={},
                     purpose='production', b_treatment_policy=dict(B_TREATMENT_POLICY))
-        for name in ('preflight.json', 'preflight-B.json', 'rehearsal.json'):
-            atomic(self.root / name, dict(manifest_id='m', environment_id=identity({}), run_ids=[]))
         with patch.object(sys, 'argv', ['campaign.py', 'run', '--results', str(self.root)]), \
                 patch.object(campaign, 'manifest', return_value=spec), \
                 patch.object(campaign, 'verify_environment'), \

@@ -14,19 +14,6 @@ OPTIONS = ['--minimization=true', '--max-depth=400', '--max-replay-steps=10000',
 B_TREATMENT_POLICY = dict(version=1, mode='fixed', treatment='FOS+COS')
 
 
-def required_certificates(spec):
-    """An explicit frozen operator waiver never becomes a preflight pass."""
-    full = ('preflight.json', 'preflight-B.json', 'rehearsal.json')
-    policy = spec.get('validation_policy')
-    if policy is None:
-        return full
-    if policy.get('version') != 1 or policy.get('rehearsal') != 'required':
-        raise ValueError('Unsupported frozen validation policy')
-    if policy.get('full_preflights') == 'required':
-        return full
-    if policy.get('full_preflights') == 'operator_waiver' and isinstance(policy.get('reason'), str) and policy['reason'].strip():
-        return ('rehearsal.json',)
-    raise ValueError('A full-preflight waiver requires an explicit recorded reason')
 
 MEASUREMENT_POLICY = dict(version=3, isolated_mutants=True, total_seconds=3600,
     child_budget=dict(policy='suite-v1', minimum_seconds=180, startup_seconds=30,

@@ -194,10 +194,6 @@ def prepare(args, root):
                                 partial_output='retained; failed generation scores zero',
                                 mutation='isolated JVM; suite-size child allowance, 3600s total; timeout/interruption-only mutants ignored')
         spec['measurement_policy'] = MEASUREMENT_POLICY
-        waiver = getattr(args, 'preflight_waiver', None)
-        spec['validation_policy'] = dict(version=1, full_preflights='required', rehearsal='required')
-        if waiver:
-            spec['validation_policy'].update(full_preflights='operator_waiver', reason=waiver.strip())
         spec['outcome_policy'] = dict(OUTCOME_POLICY, version=2, tool_failure='confirmed generator failure: zero delivered effectiveness')
         spec['resources'].update(cpus=args.cpus, container_memory=str(args.memory_gb)+'g', b_watchdog_seconds=4200)
         random.Random(2027).shuffle(spec['runs'])
@@ -277,11 +273,6 @@ def run(args, root, spec):
     verify_environment(root, spec)
     if args.command == 'run' and spec['purpose'] != 'production':
         raise SystemExit('Use smoke for a smoke manifest; prepare a separate production directory.')
-    preflight_file = 'preflight.json' if args.experiment == 'A' else 'preflight-B.json'
-    if args.command == 'run' and not (root / preflight_file).exists():
-        raise SystemExit('Run smoke on this frozen environment first.')
-    if args.command == 'run' and read(root / preflight_file)['environment_id'] != identity(spec['environment']):
-        raise SystemExit('Preflight does not match frozen environment.')
     rows = [r for r in spec['runs'] if r['experiment'] == args.experiment]
     if args.command == 'smoke':
         # Preflight records never enter the production matrix or change its order.
@@ -354,8 +345,6 @@ def run(args, root, spec):
                 and rec['status'] in ('tool_timeout', 'tool_failure', 'empty'))) for row, rec in zip(rows, records)):
             return 3
         # Seed receipts and generated suites demonstrate plumbing; equal coverage is permitted.
-        atomic(parent / preflight_file, dict(environment_id=identity(spec['environment']), run_ids=[r['id'] for r in rows],
-                                            seeds=[r['seed'] for r in rows], manifest_id=spec['id'], passed_at=time.time()))
         append(root, f'preflight passed: {len(rows)} real runs for experiment {args.experiment}')
     atomic(root / 'progress.json', progress(root, spec))
     return 0
@@ -377,12 +366,9 @@ def main():
     p.add_argument('--maze-package', type=Path, help='Local Linux AMD64 MAZE distribution; copied and hashed')
     p.add_argument('--generation-jobs', type=int, default=1)
     p.add_argument('--measurement-jobs', type=int, default=1)
-    p.add_argument('--preflight-waiver', help='Prepare only: explicit operator reason to omit full preflights; rehearsal remains required')
     p.add_argument('--cpus', type=int, default=2)
     p.add_argument('--memory-gb', type=int, default=4)
     args = p.parse_args()
-    if args.preflight_waiver is not None and (args.command != 'prepare' or not args.campaign or not args.preflight_waiver.strip()):
-        p.error('--preflight-waiver requires campaign preparation and a nonempty operator reason')
     root = args.results.resolve()
     root.mkdir(parents=True, exist_ok=True)
     if args.command == 'stop':
