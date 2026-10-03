@@ -7,10 +7,38 @@ import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import campaign
-from common import B_TREATMENT_POLICY, atomic, digest, identity, matrix, read, valid_record
+from common import B_TREATMENT_POLICY, atomic, digest, identity, matrix, read, required_certificates, valid_record
 
 
 class CampaignTests(unittest.TestCase):
+    def test_preflight_waiver_is_explicit_and_keeps_rehearsal_gate(self):
+        self.assertEqual(required_certificates({}), ('preflight.json', 'preflight-B.json', 'rehearsal.json'))
+        policy = dict(version=1, full_preflights='operator_waiver', rehearsal='required', reason='operator requested no rerun')
+        self.assertEqual(required_certificates(dict(validation_policy=policy)), ('rehearsal.json',))
+        for changed in [dict(policy, reason=' '), dict(policy, rehearsal='waived'), dict(policy, version=2)]:
+            with self.assertRaises(ValueError):
+                required_certificates(dict(validation_policy=changed))
+
+    def test_waived_cli_needs_no_fabricated_preflight_certificates(self):
+        row = next(r for r in matrix() if r['experiment'] == 'B' and r['tool'] == 'MAZE')
+        spec = dict(self.spec, runs=[row], environment={}, purpose='production',
+                    b_treatment_policy=dict(B_TREATMENT_POLICY),
+                    validation_policy=dict(version=1, full_preflights='operator_waiver',
+                                           rehearsal='required', reason='operator requested no rerun'))
+        atomic(self.root / 'rehearsal.json', dict(manifest_id='m', environment_id=identity({}), runs=[]))
+        with patch.object(sys, 'argv', ['campaign.py', 'generate', '--results', str(self.root), '--experiment', 'B']), \
+                patch.object(campaign, 'manifest', return_value=spec), \
+                patch.object(campaign, 'verify_environment'), \
+                patch.object(campaign, 'capacity', return_value={}), \
+                patch.object(campaign, 'ProgressReporter'), \
+                patch.object(campaign.signal, 'signal'), \
+                patch.object(campaign, 'reconcile'), \
+                patch.object(campaign, 'run_stage', return_value=True) as stages:
+            campaign.main()
+        self.assertEqual(stages.call_args.args[3], 'generation')
+        self.assertFalse((self.root / 'preflight.json').exists())
+        self.assertFalse((self.root / 'preflight-B.json').exists())
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)

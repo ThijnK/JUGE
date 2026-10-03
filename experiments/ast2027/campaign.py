@@ -13,7 +13,7 @@ import threading
 import time
 import uuid
 
-from common import atomic, digest, fingerprint, identity, read, selection, valid_record
+from common import atomic, digest, fingerprint, identity, read, required_certificates, selection, valid_record
 from bench import lock, manifest, prepare_validation, verify_environment
 from progress import ProgressReporter
 from host import check_capacity, container_user
@@ -296,7 +296,7 @@ def main():
         return
     with lock(root), ProgressReporter(root, spec, args.command, args.progress_interval) as reporter:
         verify_environment(root, spec)
-        for name in (() if args.command == 'rehearse' else ('preflight.json', 'preflight-B.json', 'rehearsal.json')):
+        for name in (() if args.command == 'rehearse' else required_certificates(spec)):
             cert = read(root / name)
             if cert['environment_id'] != identity(spec['environment']) or cert.get('manifest_id') != spec['id']:
                 raise ValueError('Preflight does not match environment')

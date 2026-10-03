@@ -86,6 +86,10 @@ the frozen concurrency. No preflight or rehearsal observations enter production.
 Reference cases must yield measured results; confirmed tool failures on stress
 cases are acceptable, but unresolved measurement/infrastructure errors are not.
 
+An explicit operator decision to omit fresh full preflights can be frozen during
+campaign preparation with `--preflight-waiver 'reason'`. The manifest records the
+waiver rather than claiming a preflight pass; the rehearsal remains required.
+
 Mutation children use a suite-size allowance with a 180-second minimum, bounded
 by the unchanged 3600-second total measurement cap. The formula and timeout
 interpretation are in [methodology](docs/methodology.md); per-child `budget.json`

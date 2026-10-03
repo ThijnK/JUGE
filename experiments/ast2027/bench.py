@@ -194,6 +194,10 @@ def prepare(args, root):
                                 partial_output='retained; failed generation scores zero',
                                 mutation='isolated JVM; suite-size child allowance, 3600s total; timeout/interruption-only mutants ignored')
         spec['measurement_policy'] = MEASUREMENT_POLICY
+        waiver = getattr(args, 'preflight_waiver', None)
+        spec['validation_policy'] = dict(version=1, full_preflights='required', rehearsal='required')
+        if waiver:
+            spec['validation_policy'].update(full_preflights='operator_waiver', reason=waiver.strip())
         spec['outcome_policy'] = dict(OUTCOME_POLICY, version=2, tool_failure='confirmed generator failure: zero delivered effectiveness')
         spec['resources'].update(cpus=args.cpus, container_memory=str(args.memory_gb)+'g', b_watchdog_seconds=4200)
         random.Random(2027).shuffle(spec['runs'])
@@ -373,9 +377,12 @@ def main():
     p.add_argument('--maze-package', type=Path, help='Local Linux AMD64 MAZE distribution; copied and hashed')
     p.add_argument('--generation-jobs', type=int, default=1)
     p.add_argument('--measurement-jobs', type=int, default=1)
+    p.add_argument('--preflight-waiver', help='Prepare only: explicit operator reason to omit full preflights; rehearsal remains required')
     p.add_argument('--cpus', type=int, default=2)
     p.add_argument('--memory-gb', type=int, default=4)
     args = p.parse_args()
+    if args.preflight_waiver is not None and (args.command != 'prepare' or not args.campaign or not args.preflight_waiver.strip()):
+        p.error('--preflight-waiver requires campaign preparation and a nonempty operator reason')
     root = args.results.resolve()
     root.mkdir(parents=True, exist_ok=True)
     if args.command == 'stop':
