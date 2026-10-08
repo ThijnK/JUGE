@@ -1,5 +1,6 @@
 """Shared serialization, matrix and integrity rules. No third-party dependencies."""
 import csv
+from functools import lru_cache
 import hashlib
 import json
 import os
@@ -105,13 +106,53 @@ def matrix(b_repetitions=10):
     return rows
 
 
+@lru_cache(maxsize=8)
+def _record_origins(root, modified_ns):
+    spec = read(Path(root) / 'manifest.json')
+    if identity({k: v for k, v in spec.items() if k != 'id'}) != spec['id']:
+        raise ValueError('Invalid current manifest identity')
+    origins = {}
+    stamps = []
+    for origin in spec.get('record_origins', []):
+        path = Path(root) / origin['path']
+        if digest(path) != origin['sha256']:
+            raise ValueError('Changed prior manifest')
+        stamps.append((str(path), path.stat().st_mtime_ns, path.stat().st_size))
+        parent = read(path)
+        if parent['id'] != origin['manifest_id'] or identity({k: v for k, v in parent.items() if k != 'id'}) != parent['id']:
+            raise ValueError('Invalid prior manifest identity')
+        parents = {r['id']: r for r in parent['runs']}
+        current = {r['id']: r for r in spec['runs']}
+        for case in origin['retained_case_ids']:
+            if current[case] != parents[case] or case in origins:
+                raise ValueError('Conflicting inherited case coordinates')
+            origins[case] = (parent['id'], parents[case])
+    return spec['id'], origins, stamps
+
+
+def matching_manifest(root, run, recorded_id, manifest_id):
+    """Accept an explicitly retained record without rewriting its provenance."""
+    if recorded_id == manifest_id:
+        return True
+    try:
+        path = Path(root) / 'manifest.json'
+        key = str(Path(root).resolve()), path.stat().st_mtime_ns
+        current_id, origins, stamps = _record_origins(*key)
+        if any((Path(p).stat().st_mtime_ns, Path(p).stat().st_size) != (mtime, size) for p, mtime, size in stamps):
+            _record_origins.cache_clear()
+            current_id, origins, stamps = _record_origins(*key)
+        return current_id == manifest_id and origins.get(run['id']) == (recorded_id, run)
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+
+
 def valid_record(root, run, manifest_id):
     """Return only terminal records with matching coordinates and intact evidence."""
     try:
         record = read(root / 'runs' / (run['id'] + '.json'))
         if record.get('record_sha256') != identity({k: v for k, v in record.items() if k != 'record_sha256'}):
             return None
-        if record['run'] != run or record['manifest_id'] != manifest_id or record['status'] not in ('ok', 'excluded', 'tool_timeout', 'tool_failure', 'empty'):
+        if record['run'] != run or not matching_manifest(root, run, record['manifest_id'], manifest_id) or record['status'] not in ('ok', 'excluded', 'tool_timeout', 'tool_failure', 'empty'):
             return None
         evidence = record['evidence']
         if not evidence or any(digest(root / p) != h for p, h in evidence.items()):

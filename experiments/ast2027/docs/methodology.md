@@ -126,6 +126,9 @@ Preflights and rehearsal are optional sanity checks, not execution prerequisites
 Record each change or intervention with its date, reason, affected settings,
 validation and disposition of prior attempts in the results' `operator-log.md`.
 Report these details alongside completion counts. Never alter frozen raw evidence.
+An explicitly authorized tool replacement retains a hashed prior manifest and
+lists the untouched case IDs in `record_origins`; those records keep their original
+provenance. Replaced observations must be backed up before removal.
 
 
 ## Stage and retry policy

@@ -13,7 +13,7 @@ import threading
 import time
 import uuid
 
-from common import atomic, digest, fingerprint, identity, read, selection, valid_record
+from common import atomic, digest, fingerprint, identity, read, selection, valid_record, matching_manifest
 from bench import lock, manifest, prepare_validation, verify_environment
 from progress import ProgressReporter
 from host import check_capacity, container_user
@@ -34,7 +34,7 @@ def verified(root, path, manifest_id=None):
     if not path.exists():
         return None
     record = read(path)
-    if record['run']['id'] != path.stem or (manifest_id is not None and record['manifest_id'] != manifest_id):
+    if record['run']['id'] != path.stem or (manifest_id is not None and not matching_manifest(root, record['run'], record['manifest_id'], manifest_id)):
         raise ValueError('Checkpoint belongs to a different case or campaign: ' + str(path))
     if path.parent.parent.name == 'stages' and record['phase'] != path.parent.name:
         raise ValueError('Checkpoint phase mismatch: ' + str(path))
@@ -247,6 +247,11 @@ def assemble(root, spec, rows, reporter=None):
         rec['stage_records'] = {p['phase']: str(stage_path(root, row, p['phase']).relative_to(root)) for p in phases}
         for p in rec['stage_records'].values():
             rec['evidence'][p] = digest(root / p)
+        existing = valid_record(root, row, spec['id'])
+        # Preserve retained observations byte-for-byte when their verified stages
+        # already agree; a changed stage must still replace the consolidated row.
+        if existing and existing['status'] == rec['status'] and existing['evidence'] == rec['evidence']:
+            continue
         publish(root / 'runs' / (row['id'] + '.json'), rec)
     return complete
 
