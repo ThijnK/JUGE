@@ -10,7 +10,7 @@ from common import atomic, matrix
 import worker
 
 class WorkerOutcomeTests(unittest.TestCase):
-    def exercise(self, timeout=False, receipt=True, seed_matches=True, exit_code=0):
+    def exercise(self, timeout=False, receipt=True, seed_matches=True, exit_code=0, watchdog=False):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)
             row=next(r for r in matrix() if r['tool']=='T3')
@@ -28,6 +28,8 @@ class WorkerOutcomeTests(unittest.TestCase):
                 if receipt:
                     atomic(directory/'invocation.json',dict(tool='T3',version='v',seed=row['seed'] if seed_matches else 0,
                         target='nl.uu.maze.benchmarks.'+row['subject'],budget=row['budget']))
+                if watchdog:
+                    atomic(directory/'t3-outcome.json', dict(outcome='upstream_watchdog', generated_tests=[]))
                 atomic(directory/'termination.json',dict(exit_code=exit_code))
                 (directory/'temp/testcases').mkdir(parents=True)
                 return SimpleNamespace(returncode=1 if timeout else exit_code)
@@ -52,3 +54,9 @@ class WorkerOutcomeTests(unittest.TestCase):
         self.assertEqual(self.exercise(exit_code=7)['status'], 'tool_failure')
         self.assertEqual(self.exercise(exit_code=7, receipt=False)['status'], 'excluded')
         self.assertEqual(self.exercise(exit_code=7, seed_matches=False)['status'], 'excluded')
+
+    def test_upstream_t3_watchdog_without_suite_is_timeout_not_empty(self):
+        result = self.exercise(exit_code=255, watchdog=True)
+        self.assertEqual(result['status'], 'tool_timeout')
+        self.assertEqual(result['reason'], 't3_upstream_watchdog_without_saved_tests')
+        self.assertEqual(self.exercise(exit_code=255, watchdog=True, receipt=False)['status'], 'excluded')

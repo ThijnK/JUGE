@@ -170,6 +170,11 @@ def run_one(root, row, attempt, phase="all", generation_record=None):
                 if confirmed_timeout(generation, row, definition, digest(envroot / 'maze/maze.jar')):
                     raise ToolTimeout(reason)
                 raise ValueError(reason + '_without_invocation_evidence')
+            if row['tool'] == 'T3' and (generation / 't3-outcome.json').exists():
+                receipt = read(generation / 't3-outcome.json')
+                if (receipt.get('outcome') == 'upstream_watchdog' and not receipt.get('generated_tests')
+                        and confirmed_timeout(generation, row, definition, '')):
+                    raise ToolTimeout('t3_upstream_watchdog_without_saved_tests')
             if row['tool'] == 'MAZE':
                 maze_logs = '\n'.join(p.read_text(errors='replace') for p in generation.glob('temp/maze-run-*/maze.log'))
                 if 'OutOfMemoryError' in maze_logs:

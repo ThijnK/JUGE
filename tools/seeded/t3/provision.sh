@@ -26,4 +26,4 @@ docker run --platform linux/amd64 --rm --user="$(id -u):$(id -g)" -e HOME=/tmp -
 cp "$adapter_dir/runtool" "$out/runtool"
 cp "$adapter_dir/../generation.py" "$out/generation.py"
 chmod +x "$out/runtool"
-printf '%s\n' '3.0.1-SNAPSHOT-a12cf1a3-java8-api-seeded' > "$out/VERSION.txt"
+printf '%s\n' '3.0.1-SNAPSHOT-a12cf1a3-java8-g2forsbst-author-config' > "$out/VERSION.txt"

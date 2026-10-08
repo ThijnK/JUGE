@@ -19,19 +19,28 @@ Use the generated tool directories with JUGE; source templates alone lack binari
   adapter deadline is twice the nominal budget, alongside JUGE’s READY deadline.
   Exact overrides are retained in `temp/kex.ini` and `kex-command.json`.
 - **T3:** [author source](https://git.science.uu.nl/prase101/t3), pinned revision
-  `a12cf1a3b1b7149566cf6dbb80e43eabdbb70041`, archive SHA-256 checked. Built for
-  Java 8 from unmodified upstream source. `SeededT3.java` calls Gen2 directly,
-  avoiding the upstream SBST entry point's unconditional failure exit, and seeds
-  T3Random through its existing API. Worklist retains its separate unseeded RNG:
-  the recorded seed does not control all T3 randomness, so repeated invocations
-  with the same seed may differ. Gen2 receives budget minus two seconds (minimum one),
-  with the wrapper deadline at twice the nominal budget. Settings include coverage guidance,
-  regression oracles and private/default members; all are visible in the wrapper.
+  `a12cf1a3b1b7149566cf6dbb80e43eabdbb70041`, archive SHA-256 checked.
+  The adapter follows the author's JUGE runtool (`cbae18cd`): upstream
+  `G2_forSBST generate`, random worklist, evo refinement, five refinements,
+  coverage guidance on, static information off, and the full nominal budget.
+  Upstream supplies the budget + ten-second watchdog and the remaining settings.
+  Four integration differences are retained:
+  1. Unmodified source is built for Java 8, because the author's Java 11 JAR
+     cannot load in JUGE's Java 8 measurement JVM; generated tests import T3.
+  2. A minimal wrapper seeds the existing `T3Random` API before calling upstream.
+     `WorklistRandom` uses the separate `new Random()` inherited from `Worklist`,
+     which remains unseeded. The recorded seed does not control all randomness.
+  3. Traces use a per-run directory rather than `/home/t3/traces/`.
+  4. Upstream exits -1 (255 on Linux) on completion and watchdog expiry. That exit
+     alone is not a failure when saved tests exist. `t3-outcome.json` records
+     completion, upstream watchdog, adapter timeout or failure and saved sources.
+     A crash without output is a failure; exceeding twice the nominal budget
+     remains a tool timeout. Fatal main-thread exceptions are not accepted.
   Traces are retained for replay. Upstream generated JUnit can silently return
-  after a ten-second execution wait; this limitation affects interpretation.
+  after a ten-second wait; this limitation remains unchanged.
 
-These adapters report READY only after normal seeded generation, including valid
-empty output. `invocation.json` records tool/version/target/seed/budget after the
+These adapters report READY after accepted seeded generation, including valid
+empty output. T3 also accepts saved suites from its upstream watchdog exit. `invocation.json` records tool/version/target/seed/budget after the
 process starts; `timeout.json` records an adapter deadline. `termination.json` records the process exit and elapsed wall time, including failed attempts. Neither claims a
 successful generated suite. JUGE/experiment code decides how outcomes are scored.
 

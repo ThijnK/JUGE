@@ -20,10 +20,16 @@ They do not guarantee termination of arbitrary subject/library execution.
   and tools. Campaign run order is shuffled once with a recorded seed and frozen in the manifest. Host load,
   emulation and thermal drift can affect time-limited search. Record interruptions
   and relevant host changes. Seeds do not guarantee identical generated suites.
-- T3 is built from unmodified upstream source. Its existing T3Random API receives
-  the scheduled seed, but Worklist's separate random generator remains unseeded.
-  T3 repetitions therefore include uncontrolled Worklist randomness; the recorded
-  seed is insufficient to replay all random choices, even on the same machine.
+- T3 follows the author's JUGE runtool (`cbae18cd`) through upstream
+  `G2_forSBST generate`: random worklist, evo refinement, five refinements,
+  coverage guidance enabled, static information disabled and the full budget.
+  The upstream watchdog exits at budget + ten seconds. Saved suites from its
+  exit -1 are measured; the twice-budget adapter deadline remains a tool timeout.
+  Integration differences are the Java 8 build of unmodified pinned source
+  (the author's Java 11 JAR is incompatible with measurement), seeding through
+  the existing T3Random API, per-run trace directories and evidence-based handling
+  of upstream exit -1. `WorklistRandom` uses the separate unseeded RNG inherited
+  from `Worklist`, so the recorded seed does not control all T3 randomness.
 - All tools use Linux AMD64 because Kex's native solver requires it; this is
   emulated on ARM hosts. Per-row CPU/memory limits and stage concurrency are frozen at preparation; defaults
   are two CPUs and 4 GiB. MAZE's heap is 2500 MiB and JUGE's is 1500 MiB. Other tool/executor heap settings are in their wrappers.

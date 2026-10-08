@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 HOME = Path(__file__).resolve().parent
-VERSION = '3.0.1-SNAPSHOT-a12cf1a3-java8-api-seeded'
+VERSION = '3.0.1-SNAPSHOT-a12cf1a3-java8-g2forsbst-author-config'
 
 
 def line():
@@ -33,11 +33,32 @@ def main():
         seed = int(os.environ['JUGE_TOOL_SEED'])
         command = ['/opt/java8/bin/java', '-Xmx1500m', '-cp',
                    os.pathsep.join([str(HOME / 'classes')] + list(map(str, jars)) + [classes] + dependencies),
-                   'SeededT3', str(seed), str(max(1, budget - 2) * 1000), target, classes]
+                   'SeededT3', str(seed), 'generate', target, classes, 'trdir',
+                   'temp/testcases', str(budget * 1000), 'random', 'evo', '5', 'true', 'false']
         Path('tool-command.json').write_text(json.dumps(command, indent=2) + '\n')
-        with Path('tool.log').open('w') as log:
-            generation.run(command, tool='T3', version=VERSION, seed=seed, target=target,
-                           budget=budget, stdout=log, timeout=2 * budget)
+        error = None
+        try:
+            with Path('tool.log').open('w') as log:
+                generation.run(command, tool='T3', version=VERSION, seed=seed, target=target,
+                               budget=budget, stdout=log, timeout=2 * budget)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+            error = exc
+        text = Path('tool.log').read_text(errors='replace')
+        tests = sorted(str(p) for p in Path('temp/testcases').rglob('*.java'))
+        watchdog = 'G2 has timeout' in text
+        deadline = isinstance(error, subprocess.TimeoutExpired)
+        code = error.returncode if isinstance(error, subprocess.CalledProcessError) else (None if deadline else 0)
+        fatal = 'Exception in thread "main"' in text
+        accepted = not deadline and not fatal and (code == 0 or (code == 255 and bool(tests)))
+        outcome = ('adapter_timeout' if deadline else 'tool_failure' if fatal else
+                   'upstream_watchdog' if watchdog else 'normal_completion' if accepted else 'tool_failure')
+        Path('t3-outcome.json').write_text(json.dumps(dict(tool='T3', version=VERSION,
+            seed=seed, target=target, budget=budget, exit_code=code, outcome=outcome,
+            generated_tests=tests, accepted=accepted), indent=2) + '\n')
+        if not accepted:
+            if error is not None:
+                raise error
+            raise subprocess.CalledProcessError(code or 1, command)
         Path('seed.json').write_text(json.dumps({'seed': seed, 'tool': 'T3', 'version': VERSION}) + '\n')
         print('READY', flush=True)
 
