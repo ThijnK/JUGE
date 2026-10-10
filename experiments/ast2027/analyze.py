@@ -1,5 +1,6 @@
 """Rebuild CSV/statistics from verified records; never modify raw runs."""
 from collections import Counter, defaultdict
+from fractions import Fraction
 from itertools import combinations
 from pathlib import Path
 import csv
@@ -15,6 +16,27 @@ from common import BASE, SUBJECTS, TREATMENTS, atomic, read, selection, scoreabl
 def describe(values):
     return dict(n=len(values), mean=statistics.mean(values), median=statistics.median(values),
                 sd=statistics.stdev(values) if len(values) > 1 else None, min=min(values), max=max(values))
+
+
+# Coverage gaps are compared exactly: covered/total fractions make some gaps exactly 10 pp,
+# which floating-point means place just below the threshold.
+THRESHOLD = Fraction(1, 10)
+LARGE_A12 = .71
+
+
+def exact_coverage(record):
+    if record['status'] != 'ok':
+        return Fraction(0)
+    return Fraction(record['branch_covered'], record['branch_total'])
+
+
+def holm(pvalues):
+    order = sorted(range(len(pvalues)), key=pvalues.__getitem__)
+    adjusted, running = [0.] * len(pvalues), 0.
+    for rank, i in enumerate(order):
+        running = max(running, min(1., (len(pvalues) - rank) * pvalues[i]))
+        adjusted[i] = running
+    return adjusted
 
 
 def compare(x, y):
@@ -73,15 +95,17 @@ def analyze(root):
 
 def analyze_view(valid, out):
     a = defaultdict(list)
+    exact = defaultdict(list)
     b = defaultdict(list)
     for rec in valid:
         r = rec['run']
         if r['experiment'] == 'A':
             a[r['subject'], r['budget'], r['treatment']].append(rec['coverage'])
+            exact[r['subject'], r['budget'], r['treatment']].append(exact_coverage(rec))
         else:
             b[r['subject'], r['tool']].append(rec)
     for label, treatments in [('base', BASE), ('all', TREATMENTS)]:
-        cells, winners, spreads, tests, ranks, posthoc, omnibus, distribution = [], [], [], [], [], [], [], []
+        cells, winners, spreads, tests, ranks, posthoc, omnibus, distribution, gaps = [], [], [], [], [], [], [], [], []
         for budget in (10, 60):
             blocks = []
             for subject in SUBJECTS:
@@ -91,17 +115,27 @@ def analyze_view(valid, out):
                         cells.append(dict(subject=subject, budget=budget, treatment=t, kind='combinator' if t == 'FOS+COS' else 'base', **describe(values)))
                 if not all(data.values()):
                     continue
-                means = [statistics.mean(data[t]) for t in treatments]
-                blocks.append(means)
-                order = sorted(treatments, key=lambda t: (-statistics.mean(data[t]), treatments.index(t)))
+                exact_means = {t: sum(exact[subject, budget, t]) / len(exact[subject, budget, t]) for t in treatments}
+                top = max(exact_means.values())
+                blocks.append([float(exact_means[t]) for t in treatments])
+                order = sorted(treatments, key=lambda t: (-exact_means[t], treatments.index(t)))
                 best, second = order[:2]
-                co_winners = [t for t in treatments if statistics.mean(data[t]) == max(means)]
+                co_winners = [t for t in treatments if exact_means[t] == top]
                 winners.append(dict(subject=subject, budget=budget, winners=co_winners, minimum_n=min(map(len, data.values())), maximum_n=max(map(len, data.values()))))
-                spreads.append(dict(subject=subject, budget=budget, spread=max(means)-min(means)))
+                spread = top - min(exact_means.values())
+                spreads.append(dict(subject=subject, budget=budget, spread=float(spread), at_least_10_percentage_points=spread >= THRESHOLD))
                 tests.append(dict(subject=subject, budget=budget, best=best, runner_up=second, tied_best=len(co_winners)>1, **compare(data[best], data[second])))
-            selected = [v['spread'] for v in spreads if v['budget'] == budget]
+                # A weak spot: at least 10 pp below the class's best mean, with a large effect.
+                # Tied best strategies are tested and the least favorable one is reported.
+                for t in treatments:
+                    if top - exact_means[t] >= THRESHOLD:
+                        reference, result = max(((w, compare(data[w], data[t])) for w in co_winners), key=lambda x: (x[1]['p'], -x[1]['a12']))
+                        gaps.append(dict(subject=subject, budget=budget, treatment=t, best=reference, gap=float(top - exact_means[t]),
+                                         weak_spot=result['a12'] >= LARGE_A12, **result))
+            selected = [v for v in spreads if v['budget'] == budget]
             if selected:
-                distribution.append(dict(budget=budget, subjects=len(selected), median=statistics.median(selected), q1=float(np.quantile(selected, .25)), q3=float(np.quantile(selected, .75)), max=max(selected), at_least_10_percentage_points=sum(s >= .10 for s in selected)))
+                values = [v['spread'] for v in selected]
+                distribution.append(dict(budget=budget, subjects=len(values), median=statistics.median(values), q1=float(np.quantile(values, .25)), q3=float(np.quantile(values, .75)), max=max(values), at_least_10_percentage_points=sum(v['at_least_10_percentage_points'] for v in selected)))
             n, k = len(blocks), len(treatments)
             if n:
                 rank_matrix = np.array([stats.rankdata(-np.array(block), method='average') for block in blocks])
@@ -121,7 +155,15 @@ def analyze_view(valid, out):
                         diff = float(abs(avg[i] - avg[j]))
                         pvalue = float(stats.studentized_range.sf(diff / se * math.sqrt(2), k, np.inf))
                         posthoc.append(dict(budget=budget, first=treatments[i], second=treatments[j], rank_difference=diff, p=pvalue, critical_difference=cd, exceeds_cd=diff > cd))
-        for name, rows in [('cells', cells), ('winners', winners), ('spreads', spreads), ('spread_distribution', distribution), ('best_vs_runner_up', tests), ('average_ranks', ranks), ('friedman', omnibus), ('nemenyi', posthoc)]:
+        # Holm correction over the weak spots of both budgets, one family per treatment set.
+        weak = [g for g in gaps if g['weak_spot']]
+        for g, p in zip(weak, holm([g['p'] for g in weak])):
+            g['p_holm'] = p
+        for g in gaps:
+            g.setdefault('p_holm', None)
+        weak_counts = [dict(budget=budget, treatment=t, weak_spots=sum(g['budget'] == budget and g['treatment'] == t for g in weak))
+                       for budget in (10, 60) for t in treatments]
+        for name, rows in [('cells', cells), ('winners', winners), ('spreads', spreads), ('spread_distribution', distribution), ('best_vs_runner_up', tests), ('average_ranks', ranks), ('friedman', omnibus), ('nemenyi', posthoc), ('weak_spots', gaps), ('weak_spot_counts', weak_counts)]:
             write_csv(out / f'A_{label}_{name}.csv', rows)
         atomic(out / f'A_{label}_distinct_winners.json', {str(budget): sorted({t for row in winners if row['budget'] == budget for t in row['winners']}) for budget in (10, 60)})
         write_csv(out / f'A_{label}_win_counts.csv', [dict(budget=budget, treatment=t,
